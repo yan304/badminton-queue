@@ -1,9 +1,6 @@
 import { levelStyles } from "../lib/constants";
 
 export default function CheckInDesk({
-  form,
-  setForm,
-  handleSubmit,
   waitingPlayers,
   suggestedMatch,
   queue,
@@ -12,16 +9,16 @@ export default function CheckInDesk({
 }) {
   return (
     <section className="rise-in rounded-[2rem] border border-emerald-900/10 bg-white/80 p-5 shadow-[0_20px_60px_rgba(22,51,41,0.08)] backdrop-blur sm:p-6">
-      <div className="flex flex-col gap-4 border-b border-emerald-950/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 border-emerald-950/10 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.28em] text-emerald-800/65">
             Check In Desk
           </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-emerald-950">
+          {/* <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-emerald-950">
             Add players and keep the queue resilient across refreshes
-          </h2>
+          </h2> */}
         </div>
-        <form
+        {/* <form
           className="grid gap-3 sm:grid-cols-[1.3fr_0.9fr_auto]"
           onSubmit={handleSubmit}
         >
@@ -58,7 +55,7 @@ export default function CheckInDesk({
           >
             Add Player
           </button>
-        </form>
+        </form> */}
       </div>
 
       <div className="mt-5 rounded-[1.75rem] bg-[#fcf9f1] p-4 ring-1 ring-emerald-950/8">

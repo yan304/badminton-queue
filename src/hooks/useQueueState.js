@@ -58,8 +58,8 @@ export default function useQueueState() {
   );
 
   const suggestedMatch = useMemo(
-    () => getSuggestedMatch(appState.queue, playersById),
-    [appState.queue, playersById],
+    () => getSuggestedMatch(appState.queue, playersById, appState.matchingMode),
+    [appState.queue, playersById, appState.matchingMode],
   );
 
   const activeCourtCount = appState.courts.filter((court) =>
@@ -387,6 +387,16 @@ export default function useQueueState() {
     [updateAppState],
   );
 
+  const setMatchingMode = useCallback(
+    (mode) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        matchingMode: mode,
+      }));
+    },
+    [updateAppState],
+  );
+
   const addCourt = useCallback(() => {
     updateAppState((currentState) => {
       const nextNum =
@@ -553,6 +563,7 @@ export default function useQueueState() {
     removeFromQueue,
     addToQueue,
     updatePlayerLevel,
+    setMatchingMode,
     addCourt,
     removeCourt,
     handleSubmit,

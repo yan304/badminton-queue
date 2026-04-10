@@ -5,7 +5,6 @@ import HeroStats from "./components/HeroStats";
 import LiveSnapshot from "./components/LiveSnapshot";
 import MatchHistory from "./components/MatchHistory";
 import PairingEngine from "./components/PairingEngine";
-import RulesSidebar from "./components/RulesSidebar";
 import useQueueState from "./hooks/useQueueState";
 
 function App() {
@@ -34,6 +33,7 @@ function App() {
     removeFromQueue,
     addToQueue,
     updatePlayerLevel,
+    setMatchingMode,
     addCourt,
     removeCourt,
     onCourtIds,
@@ -76,6 +76,8 @@ function App() {
                 <PairingEngine
                   suggestedMatch={suggestedMatch}
                   playersById={playersById}
+                  matchingMode={appState.matchingMode}
+                  setMatchingMode={setMatchingMode}
                 />
                 <FairRotation leaderboard={leaderboard} />
               </div>
@@ -97,7 +99,6 @@ function App() {
           </div>
 
           <aside className="rise-in space-y-6">
-            <RulesSidebar />
             <MatchHistory
               recentHistory={recentHistory}
               completedMatches={completedMatches}

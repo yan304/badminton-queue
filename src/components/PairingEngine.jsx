@@ -1,10 +1,41 @@
-export default function PairingEngine({ suggestedMatch, playersById }) {
+import { MATCHING_MODES } from "../lib/constants";
+
+export default function PairingEngine({
+  suggestedMatch,
+  playersById,
+  matchingMode,
+  setMatchingMode,
+}) {
+  const activeMode = MATCHING_MODES.find((m) => m.id === matchingMode) ?? MATCHING_MODES[0];
+
   return (
     <article className="rounded-[1.75rem] bg-[#163329] p-5 text-white shadow-[0_20px_50px_rgba(22,51,41,0.18)]">
       <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.28em] text-amber-100/80">
         Pairing Engine
       </p>
-      <h3 className="mt-2 text-2xl font-bold tracking-[-0.03em]">
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {MATCHING_MODES.map((mode) => (
+          <button
+            key={mode.id}
+            type="button"
+            onClick={() => setMatchingMode(mode.id)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+              mode.id === matchingMode
+                ? "bg-amber-100 text-emerald-950"
+                : "bg-white/10 text-emerald-50/80 hover:bg-white/20"
+            }`}
+          >
+            {mode.label}
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-2 text-xs leading-5 text-emerald-50/55">
+        {activeMode.description}
+      </p>
+
+      <h3 className="mt-3 text-2xl font-bold tracking-[-0.03em]">
         {suggestedMatch
           ? "Recommended doubles matchup"
           : "Waiting for four checked-in players"}
@@ -12,7 +43,7 @@ export default function PairingEngine({ suggestedMatch, playersById }) {
       <p className="mt-2 text-sm leading-6 text-emerald-50/75">
         {suggestedMatch
           ? suggestedMatch.summary
-          : "Once four or more players are in queue, the board suggests the best balanced matchup from the first eight waiting players."}
+          : "Once four or more players are in queue, the board suggests the best matched group from the first eight waiting players."}
       </p>
       {suggestedMatch ? (
         <div className="mt-5 grid gap-3">
