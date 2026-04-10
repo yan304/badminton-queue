@@ -65,8 +65,14 @@ export function buildBalancedTeams(playerIds, playersById, mode) {
     let score;
     if (mode === "winners-vs-losers") {
       // For W-v-L: balance teams by win-rate so each game is competitive
-      const teamARate = teamA.reduce((s, id) => s + getWinRate(playersById[id]), 0);
-      const teamBRate = teamB.reduce((s, id) => s + getWinRate(playersById[id]), 0);
+      const teamARate = teamA.reduce(
+        (s, id) => s + getWinRate(playersById[id]),
+        0,
+      );
+      const teamBRate = teamB.reduce(
+        (s, id) => s + getWinRate(playersById[id]),
+        0,
+      );
       score =
         Math.abs(teamARate - teamBRate) * 20 +
         Math.abs(teamAMatches - teamBMatches);
@@ -113,7 +119,10 @@ function describeSuggestedMatch(playerIds, playersById, metrics, mode) {
 
   if (mode === "winners-vs-losers") {
     const rates = playerIds.map((id) => getWinRate(playersById[id]));
-    const avg = (rates.reduce((s, r) => s + r, 0) / rates.length * 100).toFixed(0);
+    const avg = (
+      (rates.reduce((s, r) => s + r, 0) / rates.length) *
+      100
+    ).toFixed(0);
     return `Winners-vs-losers match (avg win rate ${avg}%) from the first ${metrics.windowSize} queued. Levels: ${levels}.`;
   }
   if (mode === "skill-separated") {

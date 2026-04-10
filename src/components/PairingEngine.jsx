@@ -6,7 +6,8 @@ export default function PairingEngine({
   matchingMode,
   setMatchingMode,
 }) {
-  const activeMode = MATCHING_MODES.find((m) => m.id === matchingMode) ?? MATCHING_MODES[0];
+  const activeMode =
+    MATCHING_MODES.find((m) => m.id === matchingMode) ?? MATCHING_MODES[0];
 
   return (
     <article className="rounded-[1.75rem] bg-[#163329] p-5 text-white shadow-[0_20px_50px_rgba(22,51,41,0.18)]">
