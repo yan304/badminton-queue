@@ -34,6 +34,9 @@ function App() {
     addToQueue,
     updatePlayerLevel,
     setMatchingMode,
+    setCourtRate,
+    updateShuttleCount,
+    setShuttleCost,
     addCourt,
     removeCourt,
     onCourtIds,
@@ -89,12 +92,17 @@ function App() {
               playersById={playersById}
               suggestedMatch={suggestedMatch}
               totalMatchesPlayed={totalMatchesPlayed}
+              shuttleCount={appState.shuttleCount}
+              shuttleCost={appState.shuttleCost}
               startSuggestedMatch={startSuggestedMatch}
               updateMatchScore={updateMatchScore}
               finishMatch={finishMatch}
               cancelMatch={cancelMatch}
               addCourt={addCourt}
               removeCourt={removeCourt}
+              setCourtRate={setCourtRate}
+              updateShuttleCount={updateShuttleCount}
+              setShuttleCost={setShuttleCost}
             />
           </div>
 

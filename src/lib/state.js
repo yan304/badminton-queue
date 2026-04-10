@@ -179,6 +179,9 @@ export function normalizeState(rawState) {
     name: String(court?.name ?? "Court"),
     currentMatchId:
       court?.currentMatchId ?? liveMatchIdsByCourt[court?.id] ?? null,
+    startedAt: court?.startedAt ?? null,
+    hourlyRate: Math.max(0, Number(court?.hourlyRate) || 0),
+    hoursUsed: Math.max(0, Number(court?.hoursUsed) || 0),
   }));
 
   const onCourtIds = new Set(
@@ -212,6 +215,8 @@ export function normalizeState(rawState) {
       typeof baseState.matchingMode === "string"
         ? baseState.matchingMode
         : "auto-balanced",
+    shuttleCount: Math.max(0, Math.floor(Number(baseState.shuttleCount) || 0)),
+    shuttleCost: Math.max(0, Number(baseState.shuttleCost) || 0),
   };
 }
 

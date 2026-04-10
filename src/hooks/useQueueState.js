@@ -265,7 +265,11 @@ export default function useQueueState() {
           ),
           courts: currentState.courts.map((court) =>
             court.id === courtId
-              ? { ...court, currentMatchId: nextMatch.id }
+              ? {
+                  ...court,
+                  currentMatchId: nextMatch.id,
+                  startedAt: court.startedAt ?? new Date().toISOString(),
+                }
               : court,
           ),
           players: currentState.players.map((player) =>
@@ -397,6 +401,40 @@ export default function useQueueState() {
     [updateAppState],
   );
 
+  const setCourtRate = useCallback(
+    (courtId, field, value) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        courts: currentState.courts.map((c) =>
+          c.id === courtId
+            ? { ...c, [field]: Math.max(0, Number(value) || 0) }
+            : c,
+        ),
+      }));
+    },
+    [updateAppState],
+  );
+
+  const updateShuttleCount = useCallback(
+    (delta) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        shuttleCount: Math.max(0, (currentState.shuttleCount ?? 0) + delta),
+      }));
+    },
+    [updateAppState],
+  );
+
+  const setShuttleCost = useCallback(
+    (cost) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        shuttleCost: Math.max(0, Number(cost) || 0),
+      }));
+    },
+    [updateAppState],
+  );
+
   const addCourt = useCallback(() => {
     updateAppState((currentState) => {
       const nextNum =
@@ -412,6 +450,7 @@ export default function useQueueState() {
             id: `court-${nextNum}`,
             name: `Court ${nextNum}`,
             currentMatchId: null,
+            hourlyRate: 0,
           },
         ],
       };
@@ -564,6 +603,9 @@ export default function useQueueState() {
     addToQueue,
     updatePlayerLevel,
     setMatchingMode,
+    setCourtRate,
+    updateShuttleCount,
+    setShuttleCost,
     addCourt,
     removeCourt,
     handleSubmit,

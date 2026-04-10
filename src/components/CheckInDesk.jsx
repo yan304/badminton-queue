@@ -14,48 +14,7 @@ export default function CheckInDesk({
           <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.28em] text-emerald-800/65">
             Check In Desk
           </p>
-          {/* <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-emerald-950">
-            Add players and keep the queue resilient across refreshes
-          </h2> */}
         </div>
-        {/* <form
-          className="grid gap-3 sm:grid-cols-[1.3fr_0.9fr_auto]"
-          onSubmit={handleSubmit}
-        >
-          <input
-            className="min-w-0 rounded-2xl border border-emerald-950/10 bg-[#f8f3e8] px-4 py-3 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
-            name="name"
-            placeholder="Player name"
-            value={form.name}
-            onChange={(event) =>
-              setForm((currentForm) => ({
-                ...currentForm,
-                name: event.target.value,
-              }))
-            }
-          />
-          <select
-            className="rounded-2xl border border-emerald-950/10 bg-[#f8f3e8] px-4 py-3 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
-            name="level"
-            value={form.level}
-            onChange={(event) =>
-              setForm((currentForm) => ({
-                ...currentForm,
-                level: event.target.value,
-              }))
-            }
-          >
-            <option>Beginner</option>
-            <option>Intermediate</option>
-            <option>Advanced</option>
-          </select>
-          <button
-            type="submit"
-            className="rounded-2xl bg-emerald-900 px-5 py-3 font-medium text-white transition hover:bg-emerald-800"
-          >
-            Add Player
-          </button>
-        </form> */}
       </div>
 
       <div className="mt-5 rounded-[1.75rem] bg-[#fcf9f1] p-4 ring-1 ring-emerald-950/8">
