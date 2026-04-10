@@ -1,5 +1,5 @@
 import CheckInDesk from "./components/CheckInDesk";
-import CourtControl from "./components/CourtControl";
+import CourtControl from "./components/court-control";
 import FairRotation from "./components/FairRotation";
 import HeroStats from "./components/HeroStats";
 import LiveSnapshot from "./components/LiveSnapshot";
@@ -26,7 +26,6 @@ function App() {
     recentHistory,
     getPlayerStatus,
     startSuggestedMatch,
-    updateMatchScore,
     finishMatch,
     cancelMatch,
     movePlayerForward,
@@ -95,7 +94,6 @@ function App() {
               shuttleCount={appState.shuttleCount}
               shuttleCost={appState.shuttleCost}
               startSuggestedMatch={startSuggestedMatch}
-              updateMatchScore={updateMatchScore}
               finishMatch={finishMatch}
               cancelMatch={cancelMatch}
               addCourt={addCourt}

@@ -305,7 +305,7 @@ export default function useQueueState() {
   );
 
   const finishMatch = useCallback(
-    (courtId) => {
+    (courtId, winnerTeam = null) => {
       updateAppState((currentState) => {
         const court = currentState.courts.find((item) => item.id === courtId);
         const match = currentState.matchHistory.find(
@@ -314,12 +314,6 @@ export default function useQueueState() {
 
         if (!court || !match) {
           return currentState;
-        }
-
-        let winnerTeam = null;
-
-        if (match.score.teamA !== match.score.teamB) {
-          winnerTeam = match.score.teamA > match.score.teamB ? 0 : 1;
         }
 
         return {

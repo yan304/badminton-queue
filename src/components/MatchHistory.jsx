@@ -54,7 +54,9 @@ export default function MatchHistory({
                   >
                     {isCancelled
                       ? "Cancelled"
-                      : `${match.score.teamA}-${match.score.teamB}`}
+                      : match.winnerTeam !== null
+                        ? "Won"
+                        : "Draw"}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-emerald-900/65">
