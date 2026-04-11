@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { STORAGE_KEY } from "../lib/constants";
-import { buildPlayersById, getSuggestedMatch } from "../lib/pairing";
+import {
+  buildBalancedTeams,
+  buildPlayersById,
+  getSuggestedMatch,
+  getTopSuggestions,
+} from "../lib/pairing";
 import { createMatchId, loadLocalSnapshot, normalizeState } from "../lib/state";
 import {
   fetchRemoteSnapshot,
@@ -57,10 +62,32 @@ export default function useQueueState() {
     [appState.queue, playersById],
   );
 
-  const suggestedMatch = useMemo(
-    () => getSuggestedMatch(appState.queue, playersById, appState.matchingMode),
-    [appState.queue, playersById, appState.matchingMode],
+  const allSuggestions = useMemo(
+    () =>
+      getTopSuggestions(
+        appState.queue,
+        playersById,
+        appState.matchingMode,
+        appState.matchHistory,
+      ),
+    [appState.queue, playersById, appState.matchingMode, appState.matchHistory],
   );
+
+  const suggestionKey = `${appState.queue.join(",")}-${appState.matchingMode}`;
+  const [pairingTweaks, setPairingTweaks] = useState({
+    key: "",
+    index: 0,
+    custom: null,
+  });
+
+  // Auto-reset: if the queue or mode changed, ignore stale tweaks
+  const { index: suggestionIndex, custom: customSuggestion } =
+    pairingTweaks.key === suggestionKey
+      ? pairingTweaks
+      : { index: 0, custom: null };
+
+  const suggestedMatch =
+    customSuggestion ?? allSuggestions[suggestionIndex] ?? null;
 
   const activeCourtCount = appState.courts.filter((court) =>
     Boolean(court.currentMatchId),
@@ -229,17 +256,70 @@ export default function useQueueState() {
   );
 
   // --- action handlers ---
+  const shuffleSuggestion = useCallback(() => {
+    setPairingTweaks((prev) => ({
+      key: suggestionKey,
+      index:
+        allSuggestions.length > 0
+          ? ((prev.key === suggestionKey ? prev.index : 0) + 1) %
+            allSuggestions.length
+          : 0,
+      custom: null,
+    }));
+  }, [suggestionKey, allSuggestions.length]);
+
+  const swapSuggestionPlayer = useCallback(
+    (oldPlayerId, newPlayerId) => {
+      const current =
+        customSuggestion ?? allSuggestions[suggestionIndex] ?? null;
+      if (!current) return;
+      const newPlayerIds = current.playerIds.map((id) =>
+        id === oldPlayerId ? newPlayerId : id,
+      );
+      const teamPlan = buildBalancedTeams(
+        newPlayerIds,
+        playersById,
+        appState.matchingMode,
+      );
+      setPairingTweaks({
+        key: suggestionKey,
+        index: suggestionIndex,
+        custom: {
+          playerIds: newPlayerIds,
+          teams: teamPlan.teams,
+          metrics: { ...current.metrics },
+          summary: "Custom match (manually adjusted)",
+        },
+      });
+    },
+    [
+      customSuggestion,
+      allSuggestions,
+      suggestionIndex,
+      playersById,
+      appState.matchingMode,
+      suggestionKey,
+    ],
+  );
+
   const startSuggestedMatch = useCallback(
-    (courtId) => {
+    (courtId, overrideSuggestion) => {
       updateAppState((currentState) => {
         const targetCourt = currentState.courts.find(
           (court) => court.id === courtId,
         );
-        const localPlayersById = buildPlayersById(currentState.players);
-        const suggestion = getSuggestedMatch(
-          currentState.queue,
-          localPlayersById,
-        );
+
+        // Use the override (from shuffle/swap) when provided, otherwise
+        // fall back to a fresh computation so the match always reflects
+        // the latest queue state.
+        const suggestion =
+          overrideSuggestion ??
+          getSuggestedMatch(
+            currentState.queue,
+            buildPlayersById(currentState.players),
+            currentState.matchingMode,
+            currentState.matchHistory,
+          );
 
         if (!targetCourt || targetCourt.currentMatchId || !suggestion) {
           return currentState;
@@ -494,6 +574,16 @@ export default function useQueueState() {
     (playerId) => {
       updateAppState((currentState) => ({
         ...currentState,
+        queue: currentState.queue.filter((queuedId) => queuedId !== playerId),
+      }));
+    },
+    [updateAppState],
+  );
+
+  const deletePlayer = useCallback(
+    (playerId) => {
+      updateAppState((currentState) => ({
+        ...currentState,
         players: currentState.players.filter((p) => p.id !== playerId),
         queue: currentState.queue.filter((queuedId) => queuedId !== playerId),
       }));
@@ -581,6 +671,9 @@ export default function useQueueState() {
     onCourtIds,
     waitingPlayers,
     suggestedMatch,
+    allSuggestionsCount: allSuggestions.length,
+    shuffleSuggestion,
+    swapSuggestionPlayer,
     activeCourtCount,
     totalMatchesPlayed,
     completedMatches,
@@ -594,6 +687,7 @@ export default function useQueueState() {
     cancelMatch,
     movePlayerForward,
     removeFromQueue,
+    deletePlayer,
     addToQueue,
     updatePlayerLevel,
     setMatchingMode,

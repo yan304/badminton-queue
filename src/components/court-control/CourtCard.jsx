@@ -137,7 +137,7 @@ export default function CourtCard({
           <button
             type="button"
             className="rounded-full bg-emerald-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/35"
-            onClick={() => startSuggestedMatch(court.id)}
+            onClick={() => startSuggestedMatch(court.id, suggestedMatch)}
             disabled={Boolean(court.currentMatchId) || !suggestedMatch}
           >
             Start recommended match

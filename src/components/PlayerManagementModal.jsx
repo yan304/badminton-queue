@@ -7,7 +7,7 @@ export default function PlayerManagementModal({
   players,
   getPlayerStatus,
   onCourtIds,
-  removeFromQueue,
+  deletePlayer,
   addToQueue,
   updatePlayerLevel,
   form,
@@ -168,9 +168,9 @@ export default function PlayerManagementModal({
                     )}
                     <button
                       type="button"
-                      onClick={() => removeFromQueue(player.id)}
+                      onClick={() => deletePlayer(player.id)}
                       disabled={isOnCourt}
-                      title="Remove player"
+                      title="Delete player"
                       className="flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <svg

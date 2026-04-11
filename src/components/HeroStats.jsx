@@ -9,7 +9,7 @@ export default function HeroStats({
   lastSyncedAt,
   getPlayerStatus,
   onCourtIds,
-  removeFromQueue,
+  deletePlayer,
   addToQueue,
   updatePlayerLevel,
   form,
@@ -86,7 +86,7 @@ export default function HeroStats({
         players={appState.players}
         getPlayerStatus={getPlayerStatus}
         onCourtIds={onCourtIds}
-        removeFromQueue={removeFromQueue}
+        deletePlayer={deletePlayer}
         addToQueue={addToQueue}
         updatePlayerLevel={updatePlayerLevel}
         form={form}

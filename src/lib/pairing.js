@@ -143,12 +143,17 @@ function scoreCombo(playerIds, players, queue, playersById, mode) {
   const levelSpread = Math.max(...levels) - Math.min(...levels);
   const fairnessSpread =
     Math.max(...matchesPlayed) - Math.min(...matchesPlayed);
+  // Total matches played by this combo — lower means we're picking players
+  // who have played less, ensuring nobody is left behind.
+  const totalPlayed = matchesPlayed.reduce((s, n) => s + n, 0);
   const beginnerProtected =
     levels.includes(LEVEL_VALUES.Beginner) && levelSpread > 1 ? 1 : 0;
   const teamPlan = buildBalancedTeams(playerIds, playersById, mode);
 
-  // Equal-play is heavily weighted in all modes so everyone plays the same amount
-  const equalPlayWeight = 40;
+  // Prefer combos that include under-played players
+  const totalPlayedWeight = 50;
+  // Queue position weight — prioritises players who have been waiting longer
+  const queueWeight = 8;
 
   let score;
   if (mode === "winners-vs-losers") {
@@ -157,36 +162,71 @@ function scoreCombo(playerIds, players, queue, playersById, mode) {
     const rateSpread = Math.max(...rates) - Math.min(...rates);
     score =
       rateSpread * 100 +
-      fairnessSpread * equalPlayWeight +
+      totalPlayed * totalPlayedWeight +
       teamPlan.teamDelta * 4 +
-      queuePenalty * 3;
+      queuePenalty * queueWeight;
   } else if (mode === "skill-separated") {
     // Minimize level spread so similar tiers play together
     score =
       levelSpread * 100 +
-      fairnessSpread * equalPlayWeight +
+      totalPlayed * totalPlayedWeight +
       teamPlan.teamDelta * 4 +
-      queuePenalty * 3 +
+      queuePenalty * queueWeight +
       beginnerProtected * 50;
   } else {
     // auto-balanced (default): balance teams by mixing skills
     score =
       levelSpread * 60 +
-      fairnessSpread * equalPlayWeight +
+      totalPlayed * totalPlayedWeight +
       teamPlan.teamDelta * 4 +
-      queuePenalty * 3 +
+      queuePenalty * queueWeight +
       beginnerProtected * 35;
   }
 
   return { score, teamPlan, levelSpread, fairnessSpread };
 }
 
-export function getSuggestedMatch(queue, playersById, mode = "auto-balanced") {
+export function getSuggestedMatch(
+  queue,
+  playersById,
+  mode = "auto-balanced",
+  matchHistory = [],
+) {
   if (queue.length < 4) {
     return null;
   }
 
-  const candidateIds = queue.slice(0, Math.min(queue.length, PAIRING_WINDOW));
+  // Enforce 1-game rest: find player IDs from the most recently finished match.
+  // Those players must sit out at least one game before being paired again.
+  const finishedMatches = matchHistory
+    .filter((m) => m.status === "finished" && m.endedAt)
+    .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
+  const restingIds = new Set(
+    finishedMatches.length > 0 ? finishedMatches[0].playerIds : [],
+  );
+
+  // Eligible = queue members not resting. Fall back to full queue if too few.
+  const eligible = queue.filter((id) => !restingIds.has(id));
+  const pool = eligible.length >= 4 ? eligible : queue;
+
+  // Always include players who have played the fewest matches so nobody gets
+  // stuck watching.  Start with the front of the pool (waiting longest), then
+  // pull in anyone with the minimum match count who isn't already included.
+  const windowIds = pool.slice(0, Math.min(pool.length, PAIRING_WINDOW));
+  const windowSet = new Set(windowIds);
+  const minPlayed = Math.min(
+    ...pool.map((id) => playersById[id]?.matchesPlayed ?? 0),
+  );
+  for (const id of pool) {
+    if (windowSet.size >= pool.length) break;
+    if (
+      !windowSet.has(id) &&
+      (playersById[id]?.matchesPlayed ?? 0) <= minPlayed
+    ) {
+      windowSet.add(id);
+    }
+  }
+  const candidateIds = [...windowSet];
   const combinations = getCombinationChoices(candidateIds, 4);
   let bestMatch = null;
   let bestScore = Number.POSITIVE_INFINITY;
@@ -235,4 +275,76 @@ export function getSuggestedMatch(queue, playersById, mode = "auto-balanced") {
       mode,
     ),
   };
+}
+
+export function getTopSuggestions(
+  queue,
+  playersById,
+  mode = "auto-balanced",
+  matchHistory = [],
+  limit = 10,
+) {
+  if (queue.length < 4) return [];
+
+  const finishedMatches = matchHistory
+    .filter((m) => m.status === "finished" && m.endedAt)
+    .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
+  const restingIds = new Set(
+    finishedMatches.length > 0 ? finishedMatches[0].playerIds : [],
+  );
+
+  const eligible = queue.filter((id) => !restingIds.has(id));
+  const pool = eligible.length >= 4 ? eligible : queue;
+
+  const windowIds = pool.slice(0, Math.min(pool.length, PAIRING_WINDOW));
+  const windowSet = new Set(windowIds);
+  const minPlayed = Math.min(
+    ...pool.map((id) => playersById[id]?.matchesPlayed ?? 0),
+  );
+  for (const id of pool) {
+    if (windowSet.size >= pool.length) break;
+    if (
+      !windowSet.has(id) &&
+      (playersById[id]?.matchesPlayed ?? 0) <= minPlayed
+    ) {
+      windowSet.add(id);
+    }
+  }
+  const candidateIds = [...windowSet];
+  const combinations = getCombinationChoices(candidateIds, 4);
+  const scored = [];
+
+  combinations.forEach((playerIds) => {
+    const players = playerIds
+      .map((playerId) => playersById[playerId])
+      .filter(Boolean);
+    if (players.length !== 4) return;
+
+    const { score, teamPlan, levelSpread, fairnessSpread } = scoreCombo(
+      playerIds,
+      players,
+      queue,
+      playersById,
+      mode,
+    );
+
+    scored.push({
+      playerIds,
+      teams: teamPlan.teams,
+      metrics: { levelSpread, fairnessSpread, windowSize: candidateIds.length },
+      score,
+    });
+  });
+
+  scored.sort((a, b) => a.score - b.score);
+
+  return scored.slice(0, limit).map((match) => ({
+    ...match,
+    summary: describeSuggestedMatch(
+      match.playerIds,
+      playersById,
+      match.metrics,
+      mode,
+    ),
+  }));
 }

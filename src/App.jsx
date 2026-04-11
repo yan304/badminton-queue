@@ -18,6 +18,9 @@ function App() {
     liveMatchesById,
     waitingPlayers,
     suggestedMatch,
+    allSuggestionsCount,
+    shuffleSuggestion,
+    swapSuggestionPlayer,
     activeCourtCount,
     totalMatchesPlayed,
     completedMatches,
@@ -30,6 +33,7 @@ function App() {
     cancelMatch,
     movePlayerForward,
     removeFromQueue,
+    deletePlayer,
     addToQueue,
     updatePlayerLevel,
     setMatchingMode,
@@ -52,7 +56,7 @@ function App() {
           lastSyncedAt={lastSyncedAt}
           getPlayerStatus={getPlayerStatus}
           onCourtIds={onCourtIds}
-          removeFromQueue={removeFromQueue}
+          deletePlayer={deletePlayer}
           addToQueue={addToQueue}
           updatePlayerLevel={updatePlayerLevel}
           form={form}
@@ -80,6 +84,10 @@ function App() {
                   playersById={playersById}
                   matchingMode={appState.matchingMode}
                   setMatchingMode={setMatchingMode}
+                  allSuggestionsCount={allSuggestionsCount}
+                  shuffleSuggestion={shuffleSuggestion}
+                  swapSuggestionPlayer={swapSuggestionPlayer}
+                  waitingPlayers={waitingPlayers}
                 />
                 <FairRotation leaderboard={leaderboard} />
               </div>
