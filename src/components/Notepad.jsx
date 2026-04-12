@@ -21,7 +21,7 @@ export default function Notepad({ notes, setNotes }) {
         type="button"
         onClick={openModal}
         title="Open notepad"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-900 text-white shadow-[0_8px_30px_rgba(22,51,41,0.35)] transition hover:bg-emerald-800 active:scale-95"
+        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-900 text-white shadow-[0_8px_30px_rgba(22,51,41,0.35)] transition hover:bg-emerald-800 active:scale-95"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

@@ -222,13 +222,13 @@ export function normalizeState(rawState) {
   };
 }
 
-export function loadLocalSnapshot() {
+export function loadLocalSnapshot(storageKey = STORAGE_KEY) {
   if (typeof window === "undefined") {
     return createDefaultState();
   }
 
   try {
-    const storedValue = window.localStorage.getItem(STORAGE_KEY);
+    const storedValue = window.localStorage.getItem(storageKey);
 
     if (!storedValue) {
       return createDefaultState();

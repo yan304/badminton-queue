@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { getSnapshotLabel } from "../lib/state";
 
-export default function MatchRecords({ allHistory, playersById }) {
+export default function MatchRecords({ allHistory, playersById, deleteMatch }) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef(null);
 
@@ -22,7 +22,7 @@ export default function MatchRecords({ allHistory, playersById }) {
         type="button"
         onClick={openModal}
         title="Match records"
-        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-900 text-white shadow-[0_8px_30px_rgba(22,51,41,0.35)] transition hover:bg-emerald-800 active:scale-95"
+        className="fixed bottom-42 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-900 text-white shadow-[0_8px_30px_rgba(22,51,41,0.35)] transition hover:bg-emerald-800 active:scale-95"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -138,6 +138,13 @@ export default function MatchRecords({ allHistory, playersById }) {
                         <p className="mt-2 text-xs text-emerald-900/50">
                           {getSnapshotLabel(match.endedAt ?? match.startedAt)}
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => deleteMatch(match.id)}
+                          className="mt-2 rounded-full border border-rose-200 px-2.5 py-1 text-xs text-rose-600 transition hover:bg-rose-50"
+                        >
+                          Delete
+                        </button>
                       </article>
                     );
                   })

@@ -18,10 +18,14 @@ function getInitialForm() {
   return { name: "", level: "Intermediate" };
 }
 
-export default function useQueueState() {
+export default function useQueueState(userId) {
+  const snapshotId = userId ? `user-${userId}` : "badminton-main";
+  const storageKey = userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY;
+
   const [appState, setAppState] = useState(() =>
-    normalizeState(loadLocalSnapshot()),
+    normalizeState(loadLocalSnapshot(storageKey)),
   );
+  const [loading, setLoading] = useState(isSupabaseConfigured);
   const [form, setForm] = useState(getInitialForm);
   const [syncStatus, setSyncStatus] = useState(
     isSupabaseConfigured
@@ -150,7 +154,7 @@ export default function useQueueState() {
         return;
       }
 
-      const { snapshot, error } = await fetchRemoteSnapshot();
+      const { snapshot, error } = await fetchRemoteSnapshot(snapshotId);
 
       if (cancelled) {
         return;
@@ -163,29 +167,25 @@ export default function useQueueState() {
       }
 
       if (snapshot) {
-        setAppState((currentState) => {
-          const remoteTime = new Date(snapshot.updatedAt ?? 0).getTime();
-          const localTime = new Date(currentState.updatedAt ?? 0).getTime();
-          return remoteTime > localTime
-            ? normalizeState(snapshot)
-            : currentState;
-        });
+        setAppState(() => normalizeState(snapshot));
         setLastSyncedAt(snapshot.updatedAt ?? null);
       }
 
       setSyncStatus("Supabase connected");
       syncReadyRef.current = true;
+      setLoading(false);
     }
 
     hydrateRemoteState().catch(() => {
       if (!cancelled) {
         setSyncStatus("Supabase unavailable, local persistence still active");
         syncReadyRef.current = true;
+        setLoading(false);
       }
     });
 
     // Subscribe to real-time updates from other devices
-    const unsubscribe = subscribeToSnapshot((remoteSnapshot) => {
+    const unsubscribe = subscribeToSnapshot(snapshotId, (remoteSnapshot) => {
       if (cancelled) return;
 
       // Skip our own echoes
@@ -212,12 +212,12 @@ export default function useQueueState() {
       cancelled = true;
       unsubscribe();
     };
-  }, []);
+  }, [snapshotId]);
 
   // --- localStorage save + debounced Supabase push ---
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      window.localStorage.setItem(storageKey, JSON.stringify(appState));
     }
 
     if (
@@ -230,7 +230,7 @@ export default function useQueueState() {
 
     const timeoutId = window.setTimeout(async () => {
       lastWrittenAtRef.current = appState.updatedAt;
-      const { error } = await saveRemoteSnapshot(appState);
+      const { error } = await saveRemoteSnapshot(snapshotId, appState);
 
       if (error) {
         setSyncStatus("Supabase sync failed, local state kept");
@@ -244,7 +244,7 @@ export default function useQueueState() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [appState]);
+  }, [appState, snapshotId, storageKey]);
 
   // --- player status helper ---
   const getPlayerStatus = useCallback(
@@ -467,6 +467,18 @@ export default function useQueueState() {
     [updateAppState],
   );
 
+  const deleteMatch = useCallback(
+    (matchId) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        matchHistory: currentState.matchHistory.filter(
+          (match) => match.id !== matchId,
+        ),
+      }));
+    },
+    [updateAppState],
+  );
+
   const setMatchingMode = useCallback(
     (mode) => {
       updateAppState((currentState) => ({
@@ -685,6 +697,7 @@ export default function useQueueState() {
   );
 
   return {
+    loading,
     appState,
     form,
     setForm,
@@ -710,6 +723,7 @@ export default function useQueueState() {
     updateMatchScore,
     finishMatch,
     cancelMatch,
+    deleteMatch,
     movePlayerForward,
     removeFromQueue,
     deletePlayer,

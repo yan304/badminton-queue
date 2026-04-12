@@ -4,16 +4,14 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON;
 const snapshotTable =
   import.meta.env.VITE_SUPABASE_TABLE || "queueing_snapshots";
-const snapshotId =
-  import.meta.env.VITE_SUPABASE_SNAPSHOT_ID || "badminton-main";
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-const supabase = isSupabaseConfigured
+export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-export async function fetchRemoteSnapshot() {
+export async function fetchRemoteSnapshot(snapshotId) {
   if (!supabase) {
     return { snapshot: null, error: null };
   }
@@ -39,7 +37,7 @@ export async function fetchRemoteSnapshot() {
   };
 }
 
-export async function saveRemoteSnapshot(snapshot) {
+export async function saveRemoteSnapshot(snapshotId, snapshot) {
   if (!supabase) {
     return { error: null };
   }
@@ -61,13 +59,13 @@ export async function saveRemoteSnapshot(snapshot) {
  * Returns an unsubscribe function. Calls `onSnapshot(payload)` when
  * another device writes to the same snapshot row.
  */
-export function subscribeToSnapshot(onSnapshot) {
+export function subscribeToSnapshot(snapshotId, onSnapshot) {
   if (!supabase) {
     return () => {};
   }
 
   const channel = supabase
-    .channel("snapshot-sync")
+    .channel(`snapshot-sync-${snapshotId}`)
     .on(
       "postgres_changes",
       {

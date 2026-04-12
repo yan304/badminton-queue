@@ -3,14 +3,19 @@ import CourtControl from "./components/court-control";
 import FairRotation from "./components/FairRotation";
 import HeroStats from "./components/HeroStats";
 import LiveSnapshot from "./components/LiveSnapshot";
+import LoginPage from "./components/LoginPage";
 import MatchHistory from "./components/MatchHistory";
 import PairingEngine from "./components/PairingEngine";
 import MatchRecords from "./components/MatchRecords";
 import Notepad from "./components/Notepad";
+import SignOut from "./components/SignOut";
+import useAuth from "./hooks/useAuth";
 import useQueueState from "./hooks/useQueueState";
 
 function App() {
+  const auth = useAuth();
   const {
+    loading,
     appState,
     form,
     setForm,
@@ -34,6 +39,7 @@ function App() {
     startSuggestedMatch,
     finishMatch,
     cancelMatch,
+    deleteMatch,
     movePlayerForward,
     removeFromQueue,
     deletePlayer,
@@ -49,7 +55,44 @@ function App() {
     removeCourt,
     onCourtIds,
     handleSubmit,
-  } = useQueueState();
+  } = useQueueState(auth.user?.id);
+
+  if (auth.loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4 py-6">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700" />
+          <p className="font-['IBM_Plex_Mono'] text-sm text-emerald-800/60">
+            Checking authentication...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!auth.user) {
+    return (
+      <LoginPage
+        signIn={auth.signIn}
+        signUp={auth.signUp}
+        error={auth.error}
+        setError={auth.setError}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4 py-6">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700" />
+          <p className="font-['IBM_Plex_Mono'] text-sm text-emerald-800/60">
+            Loading from Supabase...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
@@ -133,8 +176,13 @@ function App() {
         </section>
       </div>
 
-      <MatchRecords allHistory={allHistory} playersById={playersById} />
+      <MatchRecords
+        allHistory={allHistory}
+        playersById={playersById}
+        deleteMatch={deleteMatch}
+      />
       <Notepad notes={appState.notes} setNotes={setNotes} />
+      <SignOut signOut={auth.signOut} />
     </main>
   );
 }
