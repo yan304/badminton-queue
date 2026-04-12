@@ -72,12 +72,7 @@ function App() {
 
   if (!auth.user) {
     return (
-      <LoginPage
-        signIn={auth.signIn}
-        signUp={auth.signUp}
-        error={auth.error}
-        setError={auth.setError}
-      />
+      <LoginPage signInWithGoogle={auth.signInWithGoogle} error={auth.error} />
     );
   }
 

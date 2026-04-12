@@ -23,29 +23,18 @@ export default function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = useCallback(async (email, password) => {
+  const signInWithGoogle = useCallback(async () => {
     setError(null);
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
     });
     if (authError) setError(authError.message);
-    return !authError;
-  }, []);
-
-  const signUp = useCallback(async (email, password) => {
-    setError(null);
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (authError) setError(authError.message);
-    return !authError;
   }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
 
-  return { user, loading, error, setError, signIn, signUp, signOut };
+  return { user, loading, error, signInWithGoogle, signOut };
 }
