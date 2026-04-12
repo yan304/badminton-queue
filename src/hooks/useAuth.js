@@ -24,7 +24,6 @@ export default function useAuth() {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    console.log("Signing in with Google...", window.location.origin);
     setError(null);
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
