@@ -15,6 +15,7 @@ export default function CourtControl({
   addCourt,
   removeCourt,
   setCourtRate,
+  setCourtName,
   updateShuttleCount,
   setShuttleCost,
 }) {
@@ -78,6 +79,7 @@ export default function CourtControl({
             cancelMatch={cancelMatch}
             removeCourt={removeCourt}
             setCourtRate={setCourtRate}
+            setCourtName={setCourtName}
           />
         ))}
       </div>

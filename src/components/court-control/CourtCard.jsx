@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState } from "react";
 import { getCurrentTimeLabel } from "../../lib/state";
 
 export default function CourtCard({
@@ -11,17 +12,71 @@ export default function CourtCard({
   cancelMatch,
   removeCourt,
   setCourtRate,
+  setCourtName,
 }) {
+  const [editing, setEditing] = useState(false);
+  const [confirmWin, setConfirmWin] = useState(null);
+  const inputRef = useRef(null);
+  const dialogRef = useRef(null);
+
+  const openConfirm = useCallback((teamIndex) => {
+    setConfirmWin(teamIndex);
+    dialogRef.current?.showModal();
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    dialogRef.current?.close();
+    setConfirmWin(null);
+  }, []);
+
   return (
     <article className="rounded-[1.75rem] border border-emerald-950/10 bg-[linear-gradient(180deg,rgba(252,249,241,1),rgba(247,241,228,1))] p-5">
       <div className="flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.28em] text-emerald-800/60">
             {court.id}
           </p>
-          <h3 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-emerald-950">
-            {court.name}
-          </h3>
+          <div className="mt-2 flex items-center gap-1.5">
+            {editing ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={court.name}
+                onChange={(e) => setCourtName(court.id, e.target.value)}
+                onBlur={() => setEditing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setEditing(false);
+                }}
+                className="w-full bg-transparent text-2xl font-bold tracking-[-0.03em] text-emerald-950 underline decoration-emerald-700/30 underline-offset-4 outline-none placeholder:text-emerald-950/30"
+                placeholder="Court name"
+              />
+            ) : (
+              <>
+                <h3 className="truncate text-2xl font-bold tracking-[-0.03em] text-emerald-950">
+                  {court.name}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(true);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                  title="Rename court"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-emerald-800/40 transition hover:bg-emerald-900/8 hover:text-emerald-800"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="h-3.5 w-3.5"
+                  >
+                    <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                    <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25h5a.75.75 0 0 0 0-1.5h-5A2.75 2.75 0 0 0 2 5.75v8.5A2.75 2.75 0 0 0 4.75 17h8.5A2.75 2.75 0 0 0 16 14.25v-5a.75.75 0 0 0-1.5 0v5c0 .69-.56 1.25-1.25 1.25h-8.5c-.69 0-1.25-.56-1.25-1.25v-8.5Z" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-emerald-950 px-3 py-1 text-xs font-medium text-white">
@@ -111,7 +166,7 @@ export default function CourtCard({
                 </div>
                 <button
                   type="button"
-                  onClick={() => finishMatch(court.id, index)}
+                  onClick={() => openConfirm(index)}
                   className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-600"
                 >
                   Won
@@ -163,6 +218,61 @@ export default function CourtCard({
           </button>
         )}
       </div>
+
+      {/* Win confirmation modal */}
+      <dialog
+        ref={dialogRef}
+        onClose={() => setConfirmWin(null)}
+        className="fixed inset-0 z-50 m-auto w-full max-w-sm rounded-[1.75rem] border border-emerald-900/10 bg-[#f4eedf] p-0 shadow-[0_30px_80px_rgba(22,51,41,0.25)] backdrop:bg-black/40"
+      >
+        {confirmWin !== null && liveMatch && (
+          <div className="p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-6 w-6 text-emerald-700"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-lg font-bold tracking-[-0.02em] text-emerald-950">
+              Confirm winner
+            </h3>
+            <p className="mt-2 text-sm text-emerald-900/65">
+              Team {confirmWin === 0 ? "A" : "B"} (
+              {liveMatch.teams[confirmWin]
+                ?.map((id) => playersById[id]?.name)
+                .join(" & ")}
+              ) won this match?
+            </p>
+            <div className="mt-5 flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  finishMatch(court.id, confirmWin);
+                  closeConfirm();
+                }}
+                className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
+              >
+                Yes, confirm win
+              </button>
+              <button
+                type="button"
+                onClick={closeConfirm}
+                className="rounded-full border border-emerald-950/12 px-5 py-2.5 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </article>
   );
 }

@@ -489,6 +489,18 @@ export default function useQueueState() {
     [updateAppState],
   );
 
+  const setCourtName = useCallback(
+    (courtId, name) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        courts: currentState.courts.map((c) =>
+          c.id === courtId ? { ...c, name } : c,
+        ),
+      }));
+    },
+    [updateAppState],
+  );
+
   const updateShuttleCount = useCallback(
     (delta) => {
       updateAppState((currentState) => ({
@@ -504,6 +516,16 @@ export default function useQueueState() {
       updateAppState((currentState) => ({
         ...currentState,
         shuttleCost: Math.max(0, Number(cost) || 0),
+      }));
+    },
+    [updateAppState],
+  );
+
+  const setNotes = useCallback(
+    (notes) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        notes,
       }));
     },
     [updateAppState],
@@ -692,8 +714,10 @@ export default function useQueueState() {
     updatePlayerLevel,
     setMatchingMode,
     setCourtRate,
+    setCourtName,
     updateShuttleCount,
     setShuttleCost,
+    setNotes,
     addCourt,
     removeCourt,
     handleSubmit,

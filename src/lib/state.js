@@ -47,6 +47,7 @@ export function createDefaultState() {
       { id: "court-1", name: "Court 1", currentMatchId: "seed-match-1" },
       { id: "court-2", name: "Court 2", currentMatchId: null },
     ],
+    notes: "",
     matchHistory: [
       {
         id: "seed-match-1",
@@ -217,6 +218,7 @@ export function normalizeState(rawState) {
         : "auto-balanced",
     shuttleCount: Math.max(0, Math.floor(Number(baseState.shuttleCount) || 0)),
     shuttleCost: Math.max(0, Number(baseState.shuttleCost) || 0),
+    notes: typeof baseState.notes === "string" ? baseState.notes : "",
   };
 }
 

@@ -5,6 +5,7 @@ import HeroStats from "./components/HeroStats";
 import LiveSnapshot from "./components/LiveSnapshot";
 import MatchHistory from "./components/MatchHistory";
 import PairingEngine from "./components/PairingEngine";
+import Notepad from "./components/Notepad";
 import useQueueState from "./hooks/useQueueState";
 
 function App() {
@@ -38,8 +39,10 @@ function App() {
     updatePlayerLevel,
     setMatchingMode,
     setCourtRate,
+    setCourtName,
     updateShuttleCount,
     setShuttleCost,
+    setNotes,
     addCourt,
     removeCourt,
     onCourtIds,
@@ -107,6 +110,7 @@ function App() {
               addCourt={addCourt}
               removeCourt={removeCourt}
               setCourtRate={setCourtRate}
+              setCourtName={setCourtName}
               updateShuttleCount={updateShuttleCount}
               setShuttleCost={setShuttleCost}
             />
@@ -126,6 +130,8 @@ function App() {
           </aside>
         </section>
       </div>
+
+      <Notepad notes={appState.notes} setNotes={setNotes} />
     </main>
   );
 }
