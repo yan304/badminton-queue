@@ -116,7 +116,7 @@ export default function useQueueState() {
     [appState.players],
   );
 
-  const recentHistory = useMemo(
+  const allHistory = useMemo(
     () =>
       [...appState.matchHistory]
         .filter((match) => match.status !== "live")
@@ -124,10 +124,11 @@ export default function useQueueState() {
           (left, right) =>
             new Date(right.endedAt ?? right.startedAt) -
             new Date(left.endedAt ?? left.startedAt),
-        )
-        .slice(0, 6),
+        ),
     [appState.matchHistory],
   );
+
+  const recentHistory = useMemo(() => allHistory.slice(0, 6), [allHistory]);
 
   const updateAppState = useCallback((updater) => {
     setAppState((currentState) => {
@@ -701,6 +702,7 @@ export default function useQueueState() {
     completedMatches,
     fairnessGap,
     leaderboard,
+    allHistory,
     recentHistory,
     getPlayerStatus,
     startSuggestedMatch,

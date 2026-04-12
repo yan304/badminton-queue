@@ -75,26 +75,8 @@ export default function CheckInDesk({
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      title="Move up"
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-950/12 text-emerald-900 transition hover:border-emerald-700 hover:bg-emerald-50"
-                      onClick={() => movePlayerForward(player.id)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="h-4 w-4"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 17a.75.75 0 0 1-.75-.75V5.612L5.29 9.77a.75.75 0 0 1-1.08-1.04l5.25-5.5a.75.75 0 0 1 1.08 0l5.25 5.5a.75.75 0 1 1-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0 1 10 17Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-full border border-rose-200 px-3 py-2 text-sm text-rose-700 transition hover:bg-rose-50"
+                      title="Set idle"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-950/12 text-emerald-900 transition hover:border-amber-500 hover:bg-amber-50 hover:text-amber-700"
                       onClick={() => removeFromQueue(player.id)}
                     >
                       <svg
@@ -103,11 +85,7 @@ export default function CheckInDesk({
                         fill="currentColor"
                         className="h-4 w-4"
                       >
-                        <path
-                          fillRule="evenodd"
-                          d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.519.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
-                          clipRule="evenodd"
-                        />
+                        <path d="M4 3.5A1.5 1.5 0 0 1 5.5 2h9A1.5 1.5 0 0 1 16 3.5V5H4V3.5ZM5 5h1.5v3H5V5ZM13.5 5H15v3h-1.5V5ZM2.5 9.5A1.5 1.5 0 0 1 4 8h12a1.5 1.5 0 0 1 1.5 1.5V11h-15V9.5ZM5 11h1.5v4.5H5V11ZM13.5 11H15v4.5h-1.5V11Z" />
                       </svg>
                     </button>
                   </div>

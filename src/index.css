@@ -78,3 +78,12 @@ select {
 .rise-in {
   animation: rise-in 0.6s ease both;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

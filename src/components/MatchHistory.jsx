@@ -61,12 +61,18 @@ export default function MatchHistory({
                 </div>
                 <p className="mt-2 text-sm text-emerald-900/65">
                   {match.teams
-                    .map(
-                      (team, index) =>
-                        `Team ${index === 0 ? "A" : "B"}: ${team
-                          .map((playerId) => playersById[playerId]?.name)
-                          .join(" + ")}`,
-                    )
+                    .map((team, index) => {
+                      const names = team
+                        .map((playerId) => playersById[playerId]?.name)
+                        .join(" + ");
+                      const tag =
+                        match.winnerTeam !== null
+                          ? index === match.winnerTeam
+                            ? "🏆 "
+                            : "💀 "
+                          : "";
+                      return `${tag}Team ${index === 0 ? "A" : "B"}: ${names}`;
+                    })
                     .join(" | ")}
                 </p>
                 <p className="mt-2 text-xs text-emerald-900/50">

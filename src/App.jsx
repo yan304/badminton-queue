@@ -5,6 +5,7 @@ import HeroStats from "./components/HeroStats";
 import LiveSnapshot from "./components/LiveSnapshot";
 import MatchHistory from "./components/MatchHistory";
 import PairingEngine from "./components/PairingEngine";
+import MatchRecords from "./components/MatchRecords";
 import Notepad from "./components/Notepad";
 import useQueueState from "./hooks/useQueueState";
 
@@ -27,6 +28,7 @@ function App() {
     completedMatches,
     fairnessGap,
     leaderboard,
+    allHistory,
     recentHistory,
     getPlayerStatus,
     startSuggestedMatch,
@@ -131,6 +133,7 @@ function App() {
         </section>
       </div>
 
+      <MatchRecords allHistory={allHistory} playersById={playersById} />
       <Notepad notes={appState.notes} setNotes={setNotes} />
     </main>
   );
