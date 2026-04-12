@@ -43,7 +43,7 @@ export default function MatchHistory({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.2em] text-emerald-800/60">
-                      {match.courtId}
+                      {match.courtName ?? match.courtId}
                     </p>
                     <h3 className="mt-1 text-base font-semibold text-emerald-950">
                       {isCancelled ? "Cancelled match" : winningTeamLabel}

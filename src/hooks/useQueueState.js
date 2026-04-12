@@ -329,6 +329,7 @@ export default function useQueueState() {
         const nextMatch = {
           id: createMatchId(),
           courtId,
+          courtName: targetCourt.name,
           status: "live",
           startedAt: new Date().toISOString(),
           endedAt: null,

@@ -33,9 +33,6 @@ export default function CourtCard({
     <article className="rounded-[1.75rem] border border-emerald-950/10 bg-[linear-gradient(180deg,rgba(252,249,241,1),rgba(247,241,228,1))] p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.28em] text-emerald-800/60">
-            {court.id}
-          </p>
           <div className="mt-2 flex items-center gap-1.5">
             {editing ? (
               <input
