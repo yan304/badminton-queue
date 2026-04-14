@@ -37,19 +37,109 @@ export async function fetchRemoteSnapshot(snapshotId) {
   };
 }
 
-export async function saveRemoteSnapshot(snapshotId, snapshot) {
+export async function fetchRemoteSnapshotByCode(code) {
+  if (!supabase) {
+    return {
+      snapshot: null,
+      snapshotId: null,
+      name: null,
+      code: null,
+      error: null,
+    };
+  }
+
+  const normalizedCode = String(code ?? "")
+    .trim()
+    .toUpperCase();
+  const { data, error } = await supabase
+    .from(snapshotTable)
+    .select("id, payload, updated_at, name, code")
+    .eq("code", normalizedCode)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    return {
+      snapshot: null,
+      snapshotId: null,
+      name: null,
+      code: null,
+      error,
+    };
+  }
+
+  const row = data?.[0] ?? null;
+  return {
+    snapshot: row?.payload
+      ? {
+          ...row.payload,
+          updatedAt: row.payload.updatedAt ?? row.updated_at,
+        }
+      : null,
+    snapshotId: row?.id ?? null,
+    name: row?.name ?? null,
+    code: row?.code ?? null,
+    error: null,
+  };
+}
+
+export async function fetchRemoteSessionsByUser(userId) {
+  if (!supabase) {
+    return { sessions: [], error: null };
+  }
+
+  const idPrefix = `user-${userId}-sessions-`;
+  const { data, error } = await supabase
+    .from(snapshotTable)
+    .select("id, name, code, updated_at")
+    .like("id", `${idPrefix}%`)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    return { sessions: [], error };
+  }
+
+  const sessions = (data ?? [])
+    .map((row) => {
+      const fallbackName = String(row.id ?? "")
+        .replace(idPrefix, "")
+        .replace(/-/g, " ")
+        .trim();
+
+      return {
+        id: String(row.id ?? ""),
+        name: String(row.name ?? fallbackName ?? "Session"),
+        code: String(row.code ?? "").toUpperCase(),
+        remoteSnapshotId: String(row.id ?? ""),
+      };
+    })
+    .filter((session) => !session.id.endsWith("-sessions-index"));
+
+  return { sessions, error: null };
+}
+
+export async function saveRemoteSnapshot(snapshotId, snapshot, metadata = {}) {
   if (!supabase) {
     return { error: null };
   }
 
-  const { error } = await supabase.from(snapshotTable).upsert(
-    {
-      id: snapshotId,
-      payload: snapshot,
-      updated_at: snapshot.updatedAt,
-    },
-    { onConflict: "id" },
-  );
+  const row = {
+    id: snapshotId,
+    payload: snapshot,
+    updated_at: snapshot.updatedAt,
+  };
+
+  if (typeof metadata.code === "string") {
+    row.code = metadata.code;
+  }
+
+  if (typeof metadata.name === "string") {
+    row.name = metadata.name;
+  }
+
+  const { error } = await supabase
+    .from(snapshotTable)
+    .upsert(row, { onConflict: "id" });
 
   return { error };
 }
@@ -64,8 +154,14 @@ export function subscribeToSnapshot(snapshotId, onSnapshot) {
     return () => {};
   }
 
+  const uniqueSuffix =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const channelName = `snapshot-sync-${snapshotId}-${uniqueSuffix}`;
+
   const channel = supabase
-    .channel(`snapshot-sync-${snapshotId}`)
+    .channel(channelName)
     .on(
       "postgres_changes",
       {

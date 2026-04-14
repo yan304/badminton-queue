@@ -76,6 +76,22 @@ export function createDefaultState() {
   };
 }
 
+export function createFreshSessionState() {
+  return {
+    updatedAt: new Date().toISOString(),
+    players: [],
+    queue: [],
+    courts: [{ id: "court-1", name: "Court 1", currentMatchId: null }],
+    notes: "",
+    matchHistory: [],
+    matchingMode: "auto-balanced",
+    strictLevelChoice: "mixed-levels",
+    manualPairing: { teamA: [], teamB: [] },
+    shuttleCount: 0,
+    shuttleCost: 0,
+  };
+}
+
 function normalizePlayer(player) {
   const parsedId = Number(player?.id);
 

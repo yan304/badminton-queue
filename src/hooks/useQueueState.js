@@ -18,9 +18,21 @@ function getInitialForm() {
   return { name: "", level: "Intermediate" };
 }
 
-export default function useQueueState(userId) {
-  const snapshotId = userId ? `user-${userId}` : "badminton-main";
-  const storageKey = userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY;
+export default function useQueueState(
+  userId,
+  sessionId = "main",
+  remoteSnapshotId = null,
+  sessionCode = null,
+  sessionName = null,
+) {
+  const normalizedSessionId = String(sessionId || "main").trim() || "main";
+  const defaultSnapshotId = userId
+    ? `user-${userId}-session-${normalizedSessionId}`
+    : `badminton-main-session-${normalizedSessionId}`;
+  const snapshotId = remoteSnapshotId || defaultSnapshotId;
+  const storageKey = userId
+    ? `${STORAGE_KEY}-${userId}-${normalizedSessionId}`
+    : `${STORAGE_KEY}-${normalizedSessionId}`;
 
   const [appState, setAppState] = useState(() =>
     normalizeState(loadLocalSnapshot(storageKey)),
@@ -123,6 +135,21 @@ export default function useQueueState(userId) {
     index: 0,
     custom: null,
   });
+
+  useEffect(() => {
+    setAppState(() => normalizeState(loadLocalSnapshot(storageKey)));
+    setPairingTweaks({ key: "", index: 0, custom: null });
+
+    if (isSupabaseConfigured) {
+      syncReadyRef.current = false;
+      setLoading(true);
+      setSyncStatus("Checking Supabase snapshot...");
+      return;
+    }
+
+    syncReadyRef.current = true;
+    setLoading(false);
+  }, [storageKey]);
 
   // Auto-reset: if the queue or mode changed, ignore stale tweaks
   const { index: suggestionIndex, custom: customSuggestion } =
@@ -272,7 +299,10 @@ export default function useQueueState(userId) {
 
     const timeoutId = window.setTimeout(async () => {
       lastWrittenAtRef.current = appState.updatedAt;
-      const { error } = await saveRemoteSnapshot(snapshotId, appState);
+      const { error } = await saveRemoteSnapshot(snapshotId, appState, {
+        code: sessionCode,
+        name: sessionName,
+      });
 
       if (error) {
         setSyncStatus("Supabase sync failed, local state kept");
@@ -286,7 +316,7 @@ export default function useQueueState(userId) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [appState, snapshotId, storageKey]);
+  }, [appState, snapshotId, storageKey, sessionCode, sessionName]);
 
   // --- player status helper ---
   const getPlayerStatus = useCallback(

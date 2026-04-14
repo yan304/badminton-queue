@@ -8,12 +8,54 @@ import MatchHistory from "./components/MatchHistory";
 import PairingEngine from "./components/PairingEngine";
 import MatchRecords from "./components/MatchRecords";
 import Notepad from "./components/Notepad";
+import SessionRegistrationPage from "./components/SessionRegistrationPage";
+import SessionWorkspace from "./components/SessionWorkspace";
 import SignOut from "./components/SignOut";
+import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 import useAuth from "./hooks/useAuth";
 import useQueueState from "./hooks/useQueueState";
+import useSessionWorkspace from "./hooks/useSessionWorkspace";
 
-function App() {
+function RegistrationRoute() {
+  const [searchParams] = useSearchParams();
+  const code = String(searchParams.get("sessionCode") ?? "")
+    .trim()
+    .toUpperCase();
+
+  return <SessionRegistrationPage sessionCode={code} />;
+}
+
+function DashboardRoute() {
+  const [searchParams] = useSearchParams();
+  const sessionCode = String(searchParams.get("sessionCode") ?? "")
+    .trim()
+    .toUpperCase();
+
+  if (sessionCode) {
+    return (
+      <Navigate
+        to={`/register?sessionCode=${encodeURIComponent(sessionCode)}`}
+        replace
+      />
+    );
+  }
+
+  return <DashboardScreen />;
+}
+
+function DashboardScreen() {
   const auth = useAuth();
+  const {
+    sessions,
+    activeSessionId,
+    setActiveSessionId,
+    newSessionName,
+    setNewSessionName,
+    activeSession,
+    activeSessionRegistrationLink,
+    createSession,
+  } = useSessionWorkspace(auth.user);
+
   const {
     loading,
     appState,
@@ -59,7 +101,13 @@ function App() {
     removeCourt,
     onCourtIds,
     handleSubmit,
-  } = useQueueState(auth.user?.id);
+  } = useQueueState(
+    auth.user?.id,
+    activeSessionId,
+    activeSession?.remoteSnapshotId ?? null,
+    activeSession?.code ?? null,
+    activeSession?.name ?? null,
+  );
 
   if (auth.loading) {
     return (
@@ -96,6 +144,17 @@ function App() {
   return (
     <main className="min-h-screen px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <SessionWorkspace
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          setActiveSessionId={setActiveSessionId}
+          newSessionName={newSessionName}
+          setNewSessionName={setNewSessionName}
+          createSession={createSession}
+          activeSession={activeSession}
+          activeSessionRegistrationLink={activeSessionRegistrationLink}
+        />
+
         <HeroStats
           appState={appState}
           activeCourtCount={activeCourtCount}
@@ -188,6 +247,16 @@ function App() {
       <Notepad notes={appState.notes} setNotes={setNotes} />
       <SignOut signOut={auth.signOut} />
     </main>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/register" element={<RegistrationRoute />} />
+      <Route path="/" element={<DashboardRoute />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
