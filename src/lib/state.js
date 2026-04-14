@@ -293,6 +293,24 @@ export function getCurrentTimeLabel(value = new Date().toISOString()) {
   }).format(new Date(value));
 }
 
+export function getElapsedTimeLabel(startedAt, nowMs = Date.now()) {
+  const startedMs = new Date(startedAt).getTime();
+  if (!Number.isFinite(startedMs)) {
+    return "0m";
+  }
+
+  const elapsedMs = Math.max(0, nowMs - startedMs);
+  const totalMinutes = Math.floor(elapsedMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
 export function getSnapshotLabel(timestamp) {
   if (!timestamp) {
     return "Not synced yet";

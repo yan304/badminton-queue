@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
-import { getCurrentTimeLabel } from "../../lib/state";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getCurrentTimeLabel, getElapsedTimeLabel } from "../../lib/state";
 
 export default function CourtCard({
   court,
@@ -16,8 +16,24 @@ export default function CourtCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [confirmWin, setConfirmWin] = useState(null);
+  const [nowMs, setNowMs] = useState(Date.now());
   const inputRef = useRef(null);
   const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!liveMatch?.startedAt) {
+      return undefined;
+    }
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [liveMatch?.startedAt]);
 
   const openConfirm = useCallback((teamIndex) => {
     setConfirmWin(teamIndex);
@@ -78,7 +94,7 @@ export default function CourtCard({
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-emerald-950 px-3 py-1 text-xs font-medium text-white">
             {liveMatch
-              ? `Started ${getCurrentTimeLabel(liveMatch.startedAt)}`
+              ? `Started ${getCurrentTimeLabel(liveMatch.startedAt)} • ${getElapsedTimeLabel(liveMatch.startedAt, nowMs)} elapsed`
               : "Open now"}
           </span>
           {!liveMatch && courtCount > 1 && (
