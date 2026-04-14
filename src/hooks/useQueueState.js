@@ -170,7 +170,7 @@ export default function useQueueState(
     0,
   );
   const completedMatches = appState.matchHistory.filter(
-    (match) => match.status === "finished",
+    (match) => match.status === "finished" || match.status === "cancelled",
   );
 
   const fairnessGap = appState.players.length

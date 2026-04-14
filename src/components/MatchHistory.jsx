@@ -16,7 +16,7 @@ export default function MatchHistory({
       </h2>
       <div className="mt-4 flex items-center gap-3 text-sm text-emerald-900/60">
         <span className="rounded-full bg-amber-100 px-3 py-1">
-          {completedMatches.length} finished
+          {completedMatches.length} closed
         </span>
         <span className="rounded-full bg-stone-200 px-3 py-1">
           {fairnessGap} fairness gap
@@ -25,7 +25,7 @@ export default function MatchHistory({
       <div className="mt-5 space-y-3">
         {recentHistory.length === 0 ? (
           <div className="rounded-[1.25rem] bg-[#f8f3e8] px-4 py-6 text-sm text-emerald-900/65">
-            No completed matches yet.
+            No closed matches yet.
           </div>
         ) : (
           recentHistory.map((match) => {
