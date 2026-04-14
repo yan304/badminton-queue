@@ -66,6 +66,39 @@ export default function useQueueState(userId) {
     [appState.queue, playersById],
   );
 
+  const manualPairing = useMemo(() => {
+    const queueSet = new Set(appState.queue);
+    const teamA = (appState.manualPairing?.teamA ?? [])
+      .filter((id) => queueSet.has(id))
+      .slice(0, 2);
+    const teamASet = new Set(teamA);
+    const teamB = (appState.manualPairing?.teamB ?? [])
+      .filter((id) => queueSet.has(id) && !teamASet.has(id))
+      .slice(0, 2);
+    return { teamA, teamB };
+  }, [appState.manualPairing, appState.queue]);
+
+  const manualSuggestedMatch = useMemo(() => {
+    const teamA = manualPairing.teamA;
+    const teamB = manualPairing.teamB;
+    const selectedIds = [...teamA, ...teamB];
+
+    if (selectedIds.length !== 4 || teamA.length !== 2 || teamB.length !== 2) {
+      return null;
+    }
+
+    return {
+      playerIds: selectedIds,
+      teams: [teamA, teamB],
+      metrics: {
+        levelSpread: 0,
+        fairnessSpread: 0,
+        windowSize: appState.queue.length,
+      },
+      summary: "Manual pairing selected by host.",
+    };
+  }, [manualPairing, appState.queue.length]);
+
   const allSuggestions = useMemo(
     () =>
       getTopSuggestions(
@@ -73,11 +106,18 @@ export default function useQueueState(userId) {
         playersById,
         appState.matchingMode,
         appState.matchHistory,
+        appState.strictLevelChoice,
       ),
-    [appState.queue, playersById, appState.matchingMode, appState.matchHistory],
+    [
+      appState.queue,
+      playersById,
+      appState.matchingMode,
+      appState.matchHistory,
+      appState.strictLevelChoice,
+    ],
   );
 
-  const suggestionKey = `${appState.queue.join(",")}-${appState.matchingMode}`;
+  const suggestionKey = `${appState.queue.join(",")}-${appState.matchingMode}-${appState.strictLevelChoice}`;
   const [pairingTweaks, setPairingTweaks] = useState({
     key: "",
     index: 0,
@@ -91,7 +131,9 @@ export default function useQueueState(userId) {
       : { index: 0, custom: null };
 
   const suggestedMatch =
-    customSuggestion ?? allSuggestions[suggestionIndex] ?? null;
+    appState.matchingMode === "manual"
+      ? manualSuggestedMatch
+      : (customSuggestion ?? allSuggestions[suggestionIndex] ?? null);
 
   const activeCourtCount = appState.courts.filter((court) =>
     Boolean(court.currentMatchId),
@@ -258,6 +300,9 @@ export default function useQueueState(userId) {
 
   // --- action handlers ---
   const shuffleSuggestion = useCallback(() => {
+    if (appState.matchingMode === "manual") {
+      return;
+    }
     setPairingTweaks((prev) => ({
       key: suggestionKey,
       index:
@@ -267,10 +312,13 @@ export default function useQueueState(userId) {
           : 0,
       custom: null,
     }));
-  }, [suggestionKey, allSuggestions.length]);
+  }, [appState.matchingMode, suggestionKey, allSuggestions.length]);
 
   const swapSuggestionPlayer = useCallback(
     (oldPlayerId, newPlayerId) => {
+      if (appState.matchingMode === "manual") {
+        return;
+      }
       const current =
         customSuggestion ?? allSuggestions[suggestionIndex] ?? null;
       if (!current) return;
@@ -281,6 +329,7 @@ export default function useQueueState(userId) {
         newPlayerIds,
         playersById,
         appState.matchingMode,
+        appState.strictLevelChoice,
       );
       setPairingTweaks({
         key: suggestionKey,
@@ -299,9 +348,84 @@ export default function useQueueState(userId) {
       suggestionIndex,
       playersById,
       appState.matchingMode,
+      appState.strictLevelChoice,
       suggestionKey,
     ],
   );
+
+  const cycleManualPlayerTeam = useCallback(
+    (playerId) => {
+      updateAppState((currentState) => {
+        if (!currentState.queue.includes(playerId)) {
+          return currentState;
+        }
+
+        const currentA = currentState.manualPairing?.teamA ?? [];
+        const currentB = currentState.manualPairing?.teamB ?? [];
+        const inA = currentA.includes(playerId);
+        const inB = currentB.includes(playerId);
+
+        if (inA) {
+          if (currentB.length >= 2) {
+            return {
+              ...currentState,
+              manualPairing: {
+                teamA: currentA.filter((id) => id !== playerId),
+                teamB: currentB,
+              },
+            };
+          }
+          return {
+            ...currentState,
+            manualPairing: {
+              teamA: currentA.filter((id) => id !== playerId),
+              teamB: [...currentB, playerId],
+            },
+          };
+        }
+
+        if (inB) {
+          return {
+            ...currentState,
+            manualPairing: {
+              teamA: currentA,
+              teamB: currentB.filter((id) => id !== playerId),
+            },
+          };
+        }
+
+        if (currentA.length < 2) {
+          return {
+            ...currentState,
+            manualPairing: {
+              teamA: [...currentA, playerId],
+              teamB: currentB,
+            },
+          };
+        }
+
+        if (currentB.length < 2) {
+          return {
+            ...currentState,
+            manualPairing: {
+              teamA: currentA,
+              teamB: [...currentB, playerId],
+            },
+          };
+        }
+
+        return currentState;
+      });
+    },
+    [updateAppState],
+  );
+
+  const clearManualPairing = useCallback(() => {
+    updateAppState((currentState) => ({
+      ...currentState,
+      manualPairing: { teamA: [], teamB: [] },
+    }));
+  }, [updateAppState]);
 
   const startSuggestedMatch = useCallback(
     (courtId, overrideSuggestion) => {
@@ -320,6 +444,7 @@ export default function useQueueState(userId) {
             buildPlayersById(currentState.players),
             currentState.matchingMode,
             currentState.matchHistory,
+            currentState.strictLevelChoice,
           );
 
         if (!targetCourt || targetCourt.currentMatchId || !suggestion) {
@@ -484,6 +609,17 @@ export default function useQueueState(userId) {
       updateAppState((currentState) => ({
         ...currentState,
         matchingMode: mode,
+      }));
+      setPairingTweaks({ key: "", index: 0, custom: null });
+    },
+    [updateAppState],
+  );
+
+  const setStrictLevelChoice = useCallback(
+    (choice) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        strictLevelChoice: choice,
       }));
     },
     [updateAppState],
@@ -707,10 +843,18 @@ export default function useQueueState(userId) {
     liveMatchesById,
     onCourtIds,
     waitingPlayers,
+    manualPairing,
     suggestedMatch,
-    allSuggestionsCount: allSuggestions.length,
+    allSuggestionsCount:
+      appState.matchingMode === "manual"
+        ? manualSuggestedMatch
+          ? 1
+          : 0
+        : allSuggestions.length,
     shuffleSuggestion,
     swapSuggestionPlayer,
+    cycleManualPlayerTeam,
+    clearManualPairing,
     activeCourtCount,
     totalMatchesPlayed,
     completedMatches,
@@ -730,6 +874,7 @@ export default function useQueueState(userId) {
     addToQueue,
     updatePlayerLevel,
     setMatchingMode,
+    setStrictLevelChoice,
     setCourtRate,
     setCourtName,
     updateShuttleCount,

@@ -1,6 +1,13 @@
 import { STORAGE_KEY } from "./constants";
 import { buildBalancedTeams, buildPlayersById, uniqueIds } from "./pairing";
 
+const STRICT_LEVEL_CHOICES = new Set([
+  "advanced-only",
+  "intermediate-only",
+  "beginner-only",
+  "mixed-levels",
+]);
+
 export function createDefaultPlayers() {
   return [
     {
@@ -203,6 +210,26 @@ export function normalizeState(rawState) {
       .filter((playerId) => playersById[playerId] && !onCourtIds.has(playerId)),
   );
 
+  const queueSet = new Set(queue);
+  const manualTeamA = uniqueIds(
+    Array.isArray(baseState.manualPairing?.teamA)
+      ? baseState.manualPairing.teamA
+          .map(Number)
+          .filter((id) => Number.isFinite(id) && queueSet.has(id))
+      : [],
+  ).slice(0, 2);
+  const teamASet = new Set(manualTeamA);
+  const manualTeamB = uniqueIds(
+    Array.isArray(baseState.manualPairing?.teamB)
+      ? baseState.manualPairing.teamB
+          .map(Number)
+          .filter(
+            (id) =>
+              Number.isFinite(id) && queueSet.has(id) && !teamASet.has(id),
+          )
+      : [],
+  ).slice(0, 2);
+
   return {
     updatedAt:
       typeof baseState.updatedAt === "string"
@@ -216,6 +243,13 @@ export function normalizeState(rawState) {
       typeof baseState.matchingMode === "string"
         ? baseState.matchingMode
         : "auto-balanced",
+    strictLevelChoice: STRICT_LEVEL_CHOICES.has(baseState.strictLevelChoice)
+      ? baseState.strictLevelChoice
+      : "mixed-levels",
+    manualPairing: {
+      teamA: manualTeamA,
+      teamB: manualTeamB,
+    },
     shuttleCount: Math.max(0, Math.floor(Number(baseState.shuttleCount) || 0)),
     shuttleCost: Math.max(0, Number(baseState.shuttleCost) || 0),
     notes: typeof baseState.notes === "string" ? baseState.notes : "",

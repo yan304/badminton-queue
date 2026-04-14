@@ -31,6 +31,42 @@ export const MATCHING_MODES = [
     description:
       "Winners face winners and losers face losers — natural ladder sorting.",
   },
+  {
+    id: "manual",
+    label: "Manual",
+    description:
+      "Manually assign players to Team A and Team B for fully custom matchups.",
+  },
+  {
+    id: "strict-level",
+    label: "Strict Level",
+    description:
+      "Uses strict level rules and only accepts teams with matching level composition.",
+  },
+];
+
+export const STRICT_LEVEL_CHOICES = [
+  {
+    id: "advanced-only",
+    label: "Advanced only",
+    description: "All four players must be Advanced.",
+  },
+  {
+    id: "intermediate-only",
+    label: "Intermediate only",
+    description: "All four players must be Intermediate.",
+  },
+  {
+    id: "beginner-only",
+    label: "Beginner only",
+    description: "All four players must be Beginner.",
+  },
+  {
+    id: "mixed-levels",
+    label: "Mixed levels",
+    description:
+      "Allows mixed levels, but both teams must have the exact same level set.",
+  },
 ];
 
 export const statusStyles = {

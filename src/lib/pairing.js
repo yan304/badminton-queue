@@ -4,6 +4,46 @@ export function getLevelValue(level) {
   return LEVEL_VALUES[level] ?? LEVEL_VALUES.Intermediate;
 }
 
+function getStrictTargetLevel(strictLevelChoice) {
+  if (strictLevelChoice === "advanced-only") return "Advanced";
+  if (strictLevelChoice === "intermediate-only") return "Intermediate";
+  if (strictLevelChoice === "beginner-only") return "Beginner";
+  return null;
+}
+
+function getStrictChoiceLabel(strictLevelChoice) {
+  if (strictLevelChoice === "advanced-only") return "Advanced-only";
+  if (strictLevelChoice === "intermediate-only") return "Intermediate-only";
+  if (strictLevelChoice === "beginner-only") return "Beginner-only";
+  return "Mixed-level";
+}
+
+function getTeamLevelSignature(team, playersById) {
+  return team
+    .map((playerId) => getLevelValue(playersById[playerId]?.level))
+    .sort((a, b) => a - b)
+    .join("-");
+}
+
+function teamsShareLevelPattern(teams, playersById) {
+  if (!Array.isArray(teams) || teams.length !== 2) return false;
+  return (
+    getTeamLevelSignature(teams[0], playersById) ===
+    getTeamLevelSignature(teams[1], playersById)
+  );
+}
+
+function comboMatchesStrictChoice(players, strictLevelChoice) {
+  const targetLevel = getStrictTargetLevel(strictLevelChoice);
+
+  if (targetLevel) {
+    return players.every((player) => player.level === targetLevel);
+  }
+
+  const uniqueLevels = uniqueIds(players.map((player) => player.level));
+  return uniqueLevels.length > 1;
+}
+
 function getWinRate(player) {
   const total = (player?.wins ?? 0) + (player?.losses ?? 0);
   return total === 0 ? 0.5 : player.wins / total;
@@ -17,7 +57,12 @@ export function buildPlayersById(players) {
   return Object.fromEntries(players.map((player) => [player.id, player]));
 }
 
-export function buildBalancedTeams(playerIds, playersById, mode) {
+export function buildBalancedTeams(
+  playerIds,
+  playersById,
+  mode,
+  strictLevelChoice = "mixed-levels",
+) {
   if (playerIds.length !== 4) {
     return {
       teams: [playerIds.slice(0, 2), playerIds.slice(2)],
@@ -76,6 +121,29 @@ export function buildBalancedTeams(playerIds, playersById, mode) {
       score =
         Math.abs(teamARate - teamBRate) * 20 +
         Math.abs(teamAMatches - teamBMatches);
+    } else if (mode === "strict-level") {
+      const samePatternPenalty =
+        getTeamLevelSignature(teamA, playersById) ===
+        getTeamLevelSignature(teamB, playersById)
+          ? 0
+          : 1;
+
+      const strictMixBonus =
+        strictLevelChoice === "mixed-levels" &&
+        getTeamLevelSignature(teamA, playersById) !==
+          `${LEVEL_VALUES.Beginner}-${LEVEL_VALUES.Beginner}` &&
+        getTeamLevelSignature(teamA, playersById) !==
+          `${LEVEL_VALUES.Intermediate}-${LEVEL_VALUES.Intermediate}` &&
+        getTeamLevelSignature(teamA, playersById) !==
+          `${LEVEL_VALUES.Advanced}-${LEVEL_VALUES.Advanced}`
+          ? 0
+          : 0.25;
+
+      score =
+        samePatternPenalty * 10000 +
+        strictMixBonus * 100 +
+        Math.abs(teamAStrength - teamBStrength) * 5 +
+        Math.abs(teamAMatches - teamBMatches);
     } else {
       score =
         Math.abs(teamAStrength - teamBStrength) * 10 +
@@ -112,7 +180,13 @@ function getCombinationChoices(items, size) {
   return combinations;
 }
 
-function describeSuggestedMatch(playerIds, playersById, metrics, mode) {
+function describeSuggestedMatch(
+  playerIds,
+  playersById,
+  metrics,
+  mode,
+  strictLevelChoice,
+) {
   const levels = uniqueIds(
     playerIds.map((playerId) => playersById[playerId]?.level),
   ).join(", ");
@@ -128,12 +202,22 @@ function describeSuggestedMatch(playerIds, playersById, metrics, mode) {
   if (mode === "skill-separated") {
     return `Skill-separated match keeping similar tiers together from the first ${metrics.windowSize} queued. Levels: ${levels}.`;
   }
+  if (mode === "strict-level") {
+    return `${getStrictChoiceLabel(strictLevelChoice)} strict pairing from the first ${metrics.windowSize} queued, with both teams sharing the same level composition. Levels: ${levels}.`;
+  }
   const rangeSummary =
     metrics.levelSpread === 0 ? "same-skill block" : "mixed-skill block";
   return `${rangeSummary} from the first ${metrics.windowSize} queued players, tuned for tighter level balance across both teams. Levels: ${levels}.`;
 }
 
-function scoreCombo(playerIds, players, queue, playersById, mode) {
+function scoreCombo(
+  playerIds,
+  players,
+  queue,
+  playersById,
+  mode,
+  strictLevelChoice,
+) {
   const queuePenalty = playerIds.reduce(
     (sum, playerId) => sum + queue.indexOf(playerId),
     0,
@@ -148,7 +232,26 @@ function scoreCombo(playerIds, players, queue, playersById, mode) {
   const totalPlayed = matchesPlayed.reduce((s, n) => s + n, 0);
   const beginnerProtected =
     levels.includes(LEVEL_VALUES.Beginner) && levelSpread > 1 ? 1 : 0;
-  const teamPlan = buildBalancedTeams(playerIds, playersById, mode);
+  if (
+    mode === "strict-level" &&
+    !comboMatchesStrictChoice(players, strictLevelChoice)
+  ) {
+    return null;
+  }
+
+  const teamPlan = buildBalancedTeams(
+    playerIds,
+    playersById,
+    mode,
+    strictLevelChoice,
+  );
+
+  if (
+    mode === "strict-level" &&
+    !teamsShareLevelPattern(teamPlan.teams, playersById)
+  ) {
+    return null;
+  }
 
   // Prefer combos that include under-played players
   const totalPlayedWeight = 50;
@@ -173,6 +276,13 @@ function scoreCombo(playerIds, players, queue, playersById, mode) {
       teamPlan.teamDelta * 4 +
       queuePenalty * queueWeight +
       beginnerProtected * 50;
+  } else if (mode === "strict-level") {
+    // Strict mode prioritizes exact team level pattern matching first.
+    score =
+      totalPlayed * totalPlayedWeight +
+      queuePenalty * queueWeight +
+      fairnessSpread * 3 +
+      teamPlan.teamDelta * 2;
   } else {
     // auto-balanced (default): balance teams by mixing skills
     score =
@@ -191,6 +301,7 @@ export function getSuggestedMatch(
   playersById,
   mode = "auto-balanced",
   matchHistory = [],
+  strictLevelChoice = "mixed-levels",
 ) {
   if (queue.length < 4) {
     return null;
@@ -240,13 +351,20 @@ export function getSuggestedMatch(
       return;
     }
 
-    const { score, teamPlan, levelSpread, fairnessSpread } = scoreCombo(
+    const scored = scoreCombo(
       playerIds,
       players,
       queue,
       playersById,
       mode,
+      strictLevelChoice,
     );
+
+    if (!scored) {
+      return;
+    }
+
+    const { score, teamPlan, levelSpread, fairnessSpread } = scored;
 
     if (score < bestScore) {
       bestScore = score;
@@ -273,6 +391,7 @@ export function getSuggestedMatch(
       playersById,
       bestMatch.metrics,
       mode,
+      strictLevelChoice,
     ),
   };
 }
@@ -282,6 +401,7 @@ export function getTopSuggestions(
   playersById,
   mode = "auto-balanced",
   matchHistory = [],
+  strictLevelChoice = "mixed-levels",
   limit = 10,
 ) {
   if (queue.length < 4) return [];
@@ -320,13 +440,18 @@ export function getTopSuggestions(
       .filter(Boolean);
     if (players.length !== 4) return;
 
-    const { score, teamPlan, levelSpread, fairnessSpread } = scoreCombo(
+    const scoredCombo = scoreCombo(
       playerIds,
       players,
       queue,
       playersById,
       mode,
+      strictLevelChoice,
     );
+
+    if (!scoredCombo) return;
+
+    const { score, teamPlan, levelSpread, fairnessSpread } = scoredCombo;
 
     scored.push({
       playerIds,
@@ -345,6 +470,7 @@ export function getTopSuggestions(
       playersById,
       match.metrics,
       mode,
+      strictLevelChoice,
     ),
   }));
 }

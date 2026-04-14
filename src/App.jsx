@@ -24,10 +24,13 @@ function App() {
     playersById,
     liveMatchesById,
     waitingPlayers,
+    manualPairing,
     suggestedMatch,
     allSuggestionsCount,
     shuffleSuggestion,
     swapSuggestionPlayer,
+    cycleManualPlayerTeam,
+    clearManualPairing,
     activeCourtCount,
     totalMatchesPlayed,
     completedMatches,
@@ -46,6 +49,7 @@ function App() {
     addToQueue,
     updatePlayerLevel,
     setMatchingMode,
+    setStrictLevelChoice,
     setCourtRate,
     setCourtName,
     updateShuttleCount,
@@ -127,9 +131,14 @@ function App() {
                   playersById={playersById}
                   matchingMode={appState.matchingMode}
                   setMatchingMode={setMatchingMode}
+                  strictLevelChoice={appState.strictLevelChoice}
+                  setStrictLevelChoice={setStrictLevelChoice}
                   allSuggestionsCount={allSuggestionsCount}
                   shuffleSuggestion={shuffleSuggestion}
                   swapSuggestionPlayer={swapSuggestionPlayer}
+                  manualPairing={manualPairing}
+                  cycleManualPlayerTeam={cycleManualPlayerTeam}
+                  clearManualPairing={clearManualPairing}
                   waitingPlayers={waitingPlayers}
                 />
                 <FairRotation leaderboard={leaderboard} />
