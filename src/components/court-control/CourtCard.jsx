@@ -15,7 +15,7 @@ export default function CourtCard({
   setCourtName,
 }) {
   const [editing, setEditing] = useState(false);
-  const [confirmWin, setConfirmWin] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [nowMs, setNowMs] = useState(Date.now());
   const inputRef = useRef(null);
   const dialogRef = useRef(null);
@@ -35,14 +35,14 @@ export default function CourtCard({
     };
   }, [liveMatch?.startedAt]);
 
-  const openConfirm = useCallback((teamIndex) => {
-    setConfirmWin(teamIndex);
+  const openConfirm = useCallback((action) => {
+    setConfirmAction(action);
     dialogRef.current?.showModal();
   }, []);
 
   const closeConfirm = useCallback(() => {
     dialogRef.current?.close();
-    setConfirmWin(null);
+    setConfirmAction(null);
   }, []);
 
   return (
@@ -179,7 +179,7 @@ export default function CourtCard({
                 </div>
                 <button
                   type="button"
-                  onClick={() => openConfirm(index)}
+                  onClick={() => openConfirm({ type: "win", teamIndex: index })}
                   className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-600"
                 >
                   Won
@@ -214,7 +214,7 @@ export default function CourtCard({
           <button
             type="button"
             className="rounded-full border border-emerald-950/12 px-4 py-2.5 text-sm font-medium text-emerald-900 transition hover:border-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-emerald-950/8 disabled:text-emerald-900/35"
-            onClick={() => finishMatch(court.id)}
+            onClick={() => openConfirm({ type: "draw" })}
             disabled={!liveMatch}
           >
             Draw &amp; rotate
@@ -224,7 +224,7 @@ export default function CourtCard({
           <button
             type="button"
             className="rounded-full border border-amber-200 px-4 py-2.5 text-sm font-medium text-amber-900 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:border-amber-100 disabled:text-amber-900/35"
-            onClick={() => cancelMatch(court.id)}
+            onClick={() => openConfirm({ type: "cancel" })}
             disabled={!liveMatch}
           >
             Cancel match
@@ -235,10 +235,10 @@ export default function CourtCard({
       {/* Win confirmation modal */}
       <dialog
         ref={dialogRef}
-        onClose={() => setConfirmWin(null)}
+        onClose={() => setConfirmAction(null)}
         className="fixed inset-0 z-50 m-auto w-full max-w-sm rounded-[1.75rem] border border-emerald-900/10 bg-[#f4eedf] p-0 shadow-[0_30px_80px_rgba(22,51,41,0.25)] backdrop:bg-black/40"
       >
-        {confirmWin !== null && liveMatch && (
+        {confirmAction && liveMatch && (
           <div className="p-6 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
               <svg
@@ -255,25 +255,43 @@ export default function CourtCard({
               </svg>
             </div>
             <h3 className="mt-4 text-lg font-bold tracking-[-0.02em] text-emerald-950">
-              Confirm winner
+              {confirmAction.type === "win"
+                ? "Confirm winner"
+                : confirmAction.type === "draw"
+                  ? "Confirm draw"
+                  : "Cancel match"}
             </h3>
             <p className="mt-2 text-sm text-emerald-900/65">
-              Team {confirmWin === 0 ? "A" : "B"} (
-              {liveMatch.teams[confirmWin]
-                ?.map((id) => playersById[id]?.name)
-                .join(" & ")}
-              ) won this match?
+              {confirmAction.type === "win"
+                ? `Team ${confirmAction.teamIndex === 0 ? "A" : "B"} (${liveMatch.teams[
+                    confirmAction.teamIndex
+                  ]
+                    ?.map((id) => playersById[id]?.name)
+                    .join(" & ")}) won this match?`
+                : confirmAction.type === "draw"
+                  ? "Finish this match as a draw and rotate the players?"
+                  : "Cancel this live match and return the players to the queue?"}
             </p>
             <div className="mt-5 flex justify-center gap-3">
               <button
                 type="button"
                 onClick={() => {
-                  finishMatch(court.id, confirmWin);
+                  if (confirmAction.type === "win") {
+                    finishMatch(court.id, confirmAction.teamIndex);
+                  } else if (confirmAction.type === "draw") {
+                    finishMatch(court.id);
+                  } else if (confirmAction.type === "cancel") {
+                    cancelMatch(court.id);
+                  }
                   closeConfirm();
                 }}
                 className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
               >
-                Yes, confirm win
+                {confirmAction.type === "win"
+                  ? "Yes, confirm win"
+                  : confirmAction.type === "draw"
+                    ? "Yes, finish as draw"
+                    : "Yes, cancel match"}
               </button>
               <button
                 type="button"
