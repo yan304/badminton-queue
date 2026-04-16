@@ -711,6 +711,16 @@ export default function useQueueState(
     [updateAppState],
   );
 
+  const setRegistrationsLocked = useCallback(
+    (locked) => {
+      updateAppState((currentState) => ({
+        ...currentState,
+        registrationsLocked: Boolean(locked),
+      }));
+    },
+    [updateAppState],
+  );
+
   const addCourt = useCallback(() => {
     updateAppState((currentState) => {
       const nextNum =
@@ -910,6 +920,7 @@ export default function useQueueState(
     updateShuttleCount,
     setShuttleCost,
     setNotes,
+    setRegistrationsLocked,
     addCourt,
     removeCourt,
     handleSubmit,

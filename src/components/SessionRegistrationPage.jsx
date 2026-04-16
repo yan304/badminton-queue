@@ -113,11 +113,18 @@ export default function SessionRegistrationPage({ sessionCode }) {
     [appState.players],
   );
 
+  const registrationsLocked = Boolean(appState.registrationsLocked);
+
   const handleRegister = async (event) => {
     event.preventDefault();
     const name = form.name.trim();
 
-    if (!name || !snapshotId || saving) {
+    if (!name || !snapshotId || saving || registrationsLocked) {
+      if (registrationsLocked) {
+        setError(
+          "Registration has been locked by the session owner. No new players can register.",
+        );
+      }
       return;
     }
 
@@ -134,6 +141,14 @@ export default function SessionRegistrationPage({ sessionCode }) {
       }
 
       const base = normalizeState(latestSnapshot ?? appState);
+
+      if (base.registrationsLocked) {
+        setError(
+          "Registration has been locked by the session owner. No new players can register.",
+        );
+        return;
+      }
+
       const nextId =
         base.players.reduce((maxId, player) => Math.max(maxId, player.id), 0) +
         1;
@@ -228,13 +243,20 @@ export default function SessionRegistrationPage({ sessionCode }) {
               </select>
               <button
                 type="submit"
-                disabled={saving || !form.name.trim() || Boolean(error)}
+                disabled={saving || !form.name.trim() || registrationsLocked}
                 className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-900/35"
               >
                 {saving ? "Registering..." : "Register"}
               </button>
             </form>
           )}
+
+          {!loading && registrationsLocked ? (
+            <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Registration is closed. The session owner has locked the player
+              list.
+            </p>
+          ) : null}
 
           {error ? (
             <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">

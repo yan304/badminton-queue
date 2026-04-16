@@ -9,6 +9,9 @@ export default function SessionWorkspace({
   createSession,
   activeSession,
   activeSessionRegistrationLink,
+  registrationsLocked,
+  setRegistrationsLocked,
+  canManageRegistrationLock,
 }) {
   const [copyState, setCopyState] = useState("idle");
 
@@ -111,6 +114,30 @@ export default function SessionWorkspace({
                 ? "Try again"
                 : "Copy"}
           </button>
+          {canManageRegistrationLock ? (
+            <button
+              type="button"
+              onClick={() => setRegistrationsLocked(!registrationsLocked)}
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                registrationsLocked
+                  ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                  : "border-emerald-900/15 bg-white text-emerald-900 hover:bg-emerald-50"
+              }`}
+            >
+              {registrationsLocked
+                ? "Unlock registrations"
+                : "Lock registrations"}
+            </button>
+          ) : null}
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              registrationsLocked
+                ? "bg-amber-100 text-amber-900"
+                : "bg-emerald-100 text-emerald-900"
+            }`}
+          >
+            {registrationsLocked ? "Registration closed" : "Registration open"}
+          </span>
         </div>
       ) : null}
     </section>

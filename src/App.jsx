@@ -97,6 +97,7 @@ function DashboardScreen() {
     updateShuttleCount,
     setShuttleCost,
     setNotes,
+    setRegistrationsLocked,
     addCourt,
     removeCourt,
     onCourtIds,
@@ -153,6 +154,11 @@ function DashboardScreen() {
           createSession={createSession}
           activeSession={activeSession}
           activeSessionRegistrationLink={activeSessionRegistrationLink}
+          registrationsLocked={Boolean(appState.registrationsLocked)}
+          setRegistrationsLocked={setRegistrationsLocked}
+          canManageRegistrationLock={
+            !String(activeSession?.id ?? "").startsWith("join-")
+          }
         />
 
         <HeroStats

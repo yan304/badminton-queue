@@ -80,6 +80,7 @@ export function createFreshSessionState() {
   return {
     updatedAt: new Date().toISOString(),
     players: [],
+    registrationsLocked: false,
     queue: [],
     courts: [{ id: "court-1", name: "Court 1", currentMatchId: null }],
     notes: "",
@@ -252,6 +253,7 @@ export function normalizeState(rawState) {
         ? baseState.updatedAt
         : new Date().toISOString(),
     players,
+    registrationsLocked: Boolean(baseState.registrationsLocked),
     queue,
     courts,
     matchHistory,
