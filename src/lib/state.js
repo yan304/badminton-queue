@@ -114,6 +114,53 @@ function normalizePlayer(player) {
   };
 }
 
+function recalculatePlayerStats(players, matchHistory) {
+  const playerStatsById = Object.fromEntries(
+    players.map((player) => [
+      player.id,
+      {
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+      },
+    ]),
+  );
+
+  matchHistory.forEach((match) => {
+    if (match.status !== "cancelled") {
+      match.playerIds.forEach((playerId) => {
+        if (playerStatsById[playerId]) {
+          playerStatsById[playerId].matchesPlayed += 1;
+        }
+      });
+    }
+
+    if (match.status !== "finished" || match.winnerTeam === null) {
+      return;
+    }
+
+    const winningTeam = match.teams[match.winnerTeam] ?? [];
+
+    match.playerIds.forEach((playerId) => {
+      if (!playerStatsById[playerId]) {
+        return;
+      }
+
+      if (winningTeam.includes(playerId)) {
+        playerStatsById[playerId].wins += 1;
+        return;
+      }
+
+      playerStatsById[playerId].losses += 1;
+    });
+  });
+
+  return players.map((player) => ({
+    ...player,
+    ...playerStatsById[player.id],
+  }));
+}
+
 function normalizeMatch(match, playersById) {
   const playerIds = uniqueIds(
     Array.isArray(match?.playerIds)
@@ -191,6 +238,8 @@ export function normalizeState(rawState) {
       .filter(Boolean);
   }
 
+  const playersWithStats = recalculatePlayerStats(players, matchHistory);
+
   const liveMatchIdsByCourt = Object.fromEntries(
     matchHistory
       .filter((match) => match.status === "live")
@@ -252,7 +301,7 @@ export function normalizeState(rawState) {
       typeof baseState.updatedAt === "string"
         ? baseState.updatedAt
         : new Date().toISOString(),
-    players,
+    players: playersWithStats,
     registrationsLocked: Boolean(baseState.registrationsLocked),
     queue,
     courts,
