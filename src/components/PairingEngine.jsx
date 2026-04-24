@@ -15,6 +15,9 @@ export default function PairingEngine({
   cycleManualPlayerTeam,
   clearManualPairing,
   waitingPlayers,
+  pendingMatches,
+  openPendingModal,
+  addPendingMatch,
 }) {
   const activeMode =
     MATCHING_MODES.find((m) => m.id === matchingMode) ?? MATCHING_MODES[0];
@@ -186,31 +189,57 @@ export default function PairingEngine({
                 ? "Pick two players per team"
                 : "Waiting for four checked-in players"}
         </h3>
-        {suggestedMatch && allSuggestionsCount > 1 && !isManualMode ? (
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
-              setSwappingId(null);
-              shuffleSuggestion();
+              if (suggestedMatch) {
+                addPendingMatch(suggestedMatch);
+              }
             }}
-            title="Shuffle — try a different pairing"
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-3 text-xs font-medium text-emerald-50/90 transition hover:bg-white/20"
+            disabled={!suggestedMatch}
+            title="Add current match to pending pool"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-emerald-50/90 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-emerald-50/35"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
-              className="h-3.5 w-3.5"
+              className="h-4 w-4"
             >
               <path
                 fillRule="evenodd"
-                d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.451a.75.75 0 0 0 0-1.5H4.5a.75.75 0 0 0-.75.75v3.75a.75.75 0 0 0 1.5 0v-2.136l.312.311a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39l-.013.048Zm-10.624-2.85a5.5 5.5 0 0 1 9.201-2.465l.312.311H12.75a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 .75-.75V3.42a.75.75 0 0 0-1.5 0v2.136l-.312-.311A7 7 0 0 0 3.726 8.383a.75.75 0 0 0 1.449.39l.013-.049Z"
+                d="M10 2.75a.75.75 0 0 1 .75.75v5.75h5.75a.75.75 0 0 1 0 1.5h-5.75v5.75a.75.75 0 0 1-1.5 0v-5.75H3.5a.75.75 0 0 1 0-1.5h5.75V3.5a.75.75 0 0 1 .75-.75Z"
                 clipRule="evenodd"
               />
             </svg>
-            Shuffle
           </button>
-        ) : null}
+          {suggestedMatch && allSuggestionsCount > 1 && !isManualMode ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSwappingId(null);
+                shuffleSuggestion();
+              }}
+              title="Shuffle - try a different pairing"
+              className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-3 text-xs font-medium text-emerald-50/90 transition hover:bg-white/20"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-3.5 w-3.5"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.451a.75.75 0 0 0 0-1.5H4.5a.75.75 0 0 0-.75.75v3.75a.75.75 0 0 0 1.5 0v-2.136l.312.311a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39l-.013.048Zm-10.624-2.85a5.5 5.5 0 0 1 9.201-2.465l.312.311H12.75a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 .75-.75V3.42a.75.75 0 0 0-1.5 0v2.136l-.312-.311A7 7 0 0 0 3.726 8.383a.75.75 0 0 0 1.449.39l.013-.049Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Shuffle
+            </button>
+          ) : null}
+        </div>
       </div>
       <p className="mt-2 text-sm leading-6 text-emerald-50/75">
         {suggestedMatch

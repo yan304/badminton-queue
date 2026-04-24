@@ -88,6 +88,8 @@ export function createFreshSessionState() {
     matchingMode: "auto-balanced",
     strictLevelChoice: "mixed-levels",
     manualPairing: { teamA: [], teamB: [] },
+    pendingMatches: [],
+    dismissedPendingSignatures: [],
     shuttleCount: 0,
     shuttleCost: 0,
   };
@@ -296,6 +298,47 @@ export function normalizeState(rawState) {
       : [],
   ).slice(0, 2);
 
+  const pendingMatches = (
+    Array.isArray(baseState.pendingMatches) ? baseState.pendingMatches : []
+  )
+    .map((pending, index) => {
+      const playerIds = uniqueIds(
+        Array.isArray(pending?.playerIds)
+          ? pending.playerIds
+              .map(Number)
+              .filter(
+                (id) =>
+                  Number.isFinite(id) &&
+                  Boolean(playersById[id]) &&
+                  !onCourtIds.has(id),
+              )
+          : [],
+      );
+
+      if (playerIds.length !== 4) {
+        return null;
+      }
+
+      return {
+        id: String(pending?.id ?? `pending-${index + 1}`),
+        playerIds,
+        summary:
+          typeof pending?.summary === "string" && pending.summary.trim()
+            ? pending.summary
+            : "Host queued this as a pending match.",
+      };
+    })
+    .filter(Boolean);
+
+  const dismissedPendingSignatures = uniqueIds(
+    (Array.isArray(baseState.dismissedPendingSignatures)
+      ? baseState.dismissedPendingSignatures
+      : []
+    )
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean),
+  );
+
   return {
     updatedAt:
       typeof baseState.updatedAt === "string"
@@ -317,6 +360,8 @@ export function normalizeState(rawState) {
       teamA: manualTeamA,
       teamB: manualTeamB,
     },
+    pendingMatches,
+    dismissedPendingSignatures,
     shuttleCount: Math.max(0, Math.floor(Number(baseState.shuttleCount) || 0)),
     shuttleCost: Math.max(0, Number(baseState.shuttleCost) || 0),
     notes: typeof baseState.notes === "string" ? baseState.notes : "",

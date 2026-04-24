@@ -8,10 +8,12 @@ import MatchHistory from "./components/MatchHistory";
 import PairingEngine from "./components/PairingEngine";
 import MatchRecords from "./components/MatchRecords";
 import Notepad from "./components/Notepad";
+import PendingMatchesDrawer from "./components/PendingMatchesDrawer";
 import SessionRegistrationPage from "./components/SessionRegistrationPage";
 import SessionWorkspace from "./components/SessionWorkspace";
 import SignOut from "./components/SignOut";
 import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import useAuth from "./hooks/useAuth";
 import useQueueState from "./hooks/useQueueState";
 import useSessionWorkspace from "./hooks/useSessionWorkspace";
@@ -45,6 +47,7 @@ function DashboardRoute() {
 
 function DashboardScreen() {
   const auth = useAuth();
+  const [pendingDrawerOpen, setPendingDrawerOpen] = useState(false);
   const {
     sessions,
     activeSessionId,
@@ -68,6 +71,7 @@ function DashboardScreen() {
     waitingPlayers,
     manualPairing,
     suggestedMatch,
+    pendingMatches,
     allSuggestionsCount,
     shuffleSuggestion,
     swapSuggestionPlayer,
@@ -90,6 +94,10 @@ function DashboardScreen() {
     deletePlayer,
     addToQueue,
     updatePlayerLevel,
+    addPendingMatch,
+    removePendingMatch,
+    clearPendingMatches,
+    selectPendingMatch,
     setMatchingMode,
     setStrictLevelChoice,
     setCourtRate,
@@ -205,6 +213,9 @@ function DashboardScreen() {
                   cycleManualPlayerTeam={cycleManualPlayerTeam}
                   clearManualPairing={clearManualPairing}
                   waitingPlayers={waitingPlayers}
+                  pendingMatches={pendingMatches}
+                  openPendingModal={() => setPendingDrawerOpen(true)}
+                  addPendingMatch={addPendingMatch}
                 />
                 <FairRotation leaderboard={leaderboard} />
               </div>
@@ -251,7 +262,24 @@ function DashboardScreen() {
         deleteMatch={deleteMatch}
       />
       <Notepad notes={appState.notes} setNotes={setNotes} />
-      <SignOut signOut={auth.signOut} />
+      <SignOut
+        signOut={auth.signOut}
+        onOpenPendingPool={() => setPendingDrawerOpen(true)}
+        pendingPoolCount={pendingMatches?.length ?? 0}
+      />
+
+      <PendingMatchesDrawer
+        isOpen={pendingDrawerOpen}
+        onClose={() => setPendingDrawerOpen(false)}
+        pendingMatches={pendingMatches}
+        suggestedMatch={suggestedMatch}
+        waitingPlayers={waitingPlayers}
+        playersById={playersById}
+        addPendingMatch={addPendingMatch}
+        removePendingMatch={removePendingMatch}
+        clearPendingMatches={clearPendingMatches}
+        selectPendingMatch={selectPendingMatch}
+      />
     </main>
   );
 }

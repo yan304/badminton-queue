@@ -5,6 +5,7 @@ import {
   buildPlayersById,
   getSuggestedMatch,
   getTopSuggestions,
+  uniqueIds,
 } from "../lib/pairing";
 import { createMatchId, loadLocalSnapshot, normalizeState } from "../lib/state";
 import {
@@ -16,6 +17,28 @@ import {
 
 function getInitialForm() {
   return { name: "", level: "Intermediate" };
+}
+
+function getMatchSignature(match) {
+  if (!Array.isArray(match?.playerIds)) {
+    return "";
+  }
+
+  return [...match.playerIds]
+    .map((id) => Number(id))
+    .filter(Number.isFinite)
+    .sort((left, right) => left - right)
+    .join(",");
+}
+
+function normalizePendingPlayerIds(input) {
+  const ids = Array.isArray(input)
+    ? input
+    : Array.isArray(input?.playerIds)
+      ? input.playerIds
+      : [];
+
+  return [...new Set(ids.map((id) => Number(id)).filter(Number.isFinite))];
 }
 
 export default function useQueueState(
@@ -162,6 +185,63 @@ export default function useQueueState(
       ? manualSuggestedMatch
       : (customSuggestion ?? allSuggestions[suggestionIndex] ?? null);
 
+  const pendingMatches = useMemo(() => {
+    const customPendingMatches = (appState.pendingMatches ?? [])
+      .map((pending, index) => {
+        const playerIds = normalizePendingPlayerIds(pending).filter(
+          (id) => Boolean(playersById[id]) && !onCourtIds.has(id),
+        );
+
+        if (playerIds.length !== 4) {
+          return null;
+        }
+
+        const teamPlan = buildBalancedTeams(
+          playerIds,
+          playersById,
+          appState.matchingMode,
+          appState.strictLevelChoice,
+        );
+
+        return {
+          id: pending?.id ?? `pending-${index}`,
+          playerIds,
+          teams: teamPlan.teams,
+          metrics: {
+            levelSpread: 0,
+            fairnessSpread: 0,
+            windowSize: appState.queue.length,
+          },
+          summary:
+            typeof pending?.summary === "string" && pending.summary.trim()
+              ? pending.summary
+              : "Host queued this as a pending match.",
+        };
+      })
+      .filter(Boolean);
+
+    const dismissedSignatures = new Set(
+      appState.dismissedPendingSignatures ?? [],
+    );
+
+    const seenSignatures = new Set();
+    return customPendingMatches.filter((match) => {
+      const signature = getMatchSignature(match);
+      if (!signature || dismissedSignatures.has(signature)) {
+        return false;
+      }
+      seenSignatures.add(signature);
+      return true;
+    });
+  }, [
+    appState.dismissedPendingSignatures,
+    appState.pendingMatches,
+    appState.queue,
+    appState.strictLevelChoice,
+    onCourtIds,
+    playersById,
+  ]);
+
   const activeCourtCount = appState.courts.filter((court) =>
     Boolean(court.currentMatchId),
   ).length;
@@ -213,6 +293,127 @@ export default function useQueueState(
       });
     });
   }, []);
+
+  const addPendingMatch = useCallback(
+    (matchInput, summaryOverride = null) => {
+      updateAppState((currentState) => {
+        const playerIds = normalizePendingPlayerIds(matchInput);
+        const queueSet = new Set(currentState.queue);
+
+        if (
+          playerIds.length !== 4 ||
+          !playerIds.every((playerId) => queueSet.has(playerId))
+        ) {
+          return currentState;
+        }
+
+        const candidateSignature = getMatchSignature({ playerIds });
+        const alreadyExists = (currentState.pendingMatches ?? []).some(
+          (entry) => getMatchSignature(entry) === candidateSignature,
+        );
+
+        if (alreadyExists) {
+          return currentState;
+        }
+
+        const summaryFromInput =
+          typeof matchInput?.summary === "string" ? matchInput.summary : "";
+        const summary =
+          typeof summaryOverride === "string" && summaryOverride.trim()
+            ? summaryOverride.trim()
+            : summaryFromInput.trim() || "Host queued this as a pending match.";
+
+        return {
+          ...currentState,
+          queue: currentState.queue.filter(
+            (queuedId) => !playerIds.includes(queuedId),
+          ),
+          pendingMatches: [
+            ...(currentState.pendingMatches ?? []),
+            {
+              id: `pending-${Date.now()}`,
+              playerIds,
+              summary,
+            },
+          ],
+          dismissedPendingSignatures: (
+            currentState.dismissedPendingSignatures ?? []
+          ).filter((signature) => signature !== candidateSignature),
+        };
+      });
+    },
+    [updateAppState],
+  );
+
+  const removePendingMatch = useCallback(
+    (matchInput) => {
+      const targetSignature = getMatchSignature({
+        playerIds: normalizePendingPlayerIds(matchInput),
+      });
+
+      if (!targetSignature) {
+        return;
+      }
+
+      updateAppState((currentState) => {
+        const playerIds = normalizePendingPlayerIds(matchInput);
+        const liveMatchIds = new Set(
+          currentState.matchHistory
+            .filter((match) => match.status === "live")
+            .flatMap((match) => match.playerIds),
+        );
+        const restoredIds = playerIds.filter(
+          (id) =>
+            !currentState.queue.includes(id) &&
+            !liveMatchIds.has(id) &&
+            currentState.players.some((player) => player.id === id),
+        );
+
+        return {
+          ...currentState,
+          queue: [...currentState.queue, ...restoredIds],
+          pendingMatches: (currentState.pendingMatches ?? []).filter(
+            (entry) => getMatchSignature(entry) !== targetSignature,
+          ),
+          dismissedPendingSignatures: [
+            ...new Set([
+              ...(currentState.dismissedPendingSignatures ?? []),
+              targetSignature,
+            ]),
+          ],
+        };
+      });
+    },
+    [updateAppState],
+  );
+
+  const clearPendingMatches = useCallback(() => {
+    updateAppState((currentState) => {
+      const pendingIds = uniqueIds(
+        (currentState.pendingMatches ?? []).flatMap((entry) =>
+          normalizePendingPlayerIds(entry),
+        ),
+      );
+      const liveMatchIds = new Set(
+        currentState.matchHistory
+          .filter((match) => match.status === "live")
+          .flatMap((match) => match.playerIds),
+      );
+      const restoredIds = pendingIds.filter(
+        (id) =>
+          !currentState.queue.includes(id) &&
+          !liveMatchIds.has(id) &&
+          currentState.players.some((player) => player.id === id),
+      );
+
+      return {
+        ...currentState,
+        queue: [...currentState.queue, ...restoredIds],
+        pendingMatches: [],
+        dismissedPendingSignatures: [],
+      };
+    });
+  }, [updateAppState]);
 
   // --- Supabase hydration + real-time subscription ---
   useEffect(() => {
@@ -481,6 +682,12 @@ export default function useQueueState(
           return currentState;
         }
 
+        const nextQueue = currentState.queue.filter(
+          (playerId) => !suggestion.playerIds.includes(playerId),
+        );
+        const selectedSignature = getMatchSignature(suggestion);
+        const startedPlayerIds = new Set(suggestion.playerIds);
+
         const nextMatch = {
           id: createMatchId(),
           courtId,
@@ -497,9 +704,17 @@ export default function useQueueState(
 
         return {
           ...currentState,
-          queue: currentState.queue.filter(
-            (playerId) => !suggestion.playerIds.includes(playerId),
+          queue: nextQueue,
+          pendingMatches: (currentState.pendingMatches ?? []).filter(
+            (entry) =>
+              getMatchSignature(entry) !== selectedSignature &&
+              normalizePendingPlayerIds(entry).every(
+                (id) => !startedPlayerIds.has(id),
+              ),
           ),
+          dismissedPendingSignatures: (
+            currentState.dismissedPendingSignatures ?? []
+          ).filter((signature) => signature !== selectedSignature),
           courts: currentState.courts.map((court) =>
             court.id === courtId
               ? {
@@ -555,7 +770,7 @@ export default function useQueueState(
 
         return {
           ...currentState,
-          queue: [...currentState.queue, ...match.playerIds],
+          queue: uniqueIds([...currentState.queue, ...match.playerIds]),
           courts: currentState.courts.map((item) =>
             item.id === courtId ? { ...item, currentMatchId: null } : item,
           ),
@@ -602,7 +817,7 @@ export default function useQueueState(
 
         return {
           ...currentState,
-          queue: [...currentState.queue, ...match.playerIds],
+          queue: uniqueIds([...currentState.queue, ...match.playerIds]),
           courts: currentState.courts.map((item) =>
             item.id === courtId ? { ...item, currentMatchId: null } : item,
           ),
@@ -653,6 +868,26 @@ export default function useQueueState(
       }));
     },
     [updateAppState],
+  );
+
+  const selectPendingMatch = useCallback(
+    (match) => {
+      if (appState.matchingMode === "manual" || !match) {
+        return;
+      }
+
+      const selectedSignature = getMatchSignature(match);
+      const selectedIndex = allSuggestions.findIndex(
+        (entry) => getMatchSignature(entry) === selectedSignature,
+      );
+
+      setPairingTweaks({
+        key: suggestionKey,
+        index: selectedIndex >= 0 ? selectedIndex : 0,
+        custom: selectedIndex >= 0 ? null : match,
+      });
+    },
+    [appState.matchingMode, allSuggestions, suggestionKey],
   );
 
   const setCourtRate = useCallback(
@@ -885,6 +1120,7 @@ export default function useQueueState(
     waitingPlayers,
     manualPairing,
     suggestedMatch,
+    pendingMatches,
     allSuggestionsCount:
       appState.matchingMode === "manual"
         ? manualSuggestedMatch
@@ -913,6 +1149,10 @@ export default function useQueueState(
     deletePlayer,
     addToQueue,
     updatePlayerLevel,
+    addPendingMatch,
+    removePendingMatch,
+    clearPendingMatches,
+    selectPendingMatch,
     setMatchingMode,
     setStrictLevelChoice,
     setCourtRate,

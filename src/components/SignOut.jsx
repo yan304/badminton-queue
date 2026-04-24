@@ -15,28 +15,55 @@ const logoutIcon = (
   </>
 );
 
-export default function SignOut({ signOut }) {
+export default function SignOut({
+  signOut,
+  onOpenPendingPool,
+  pendingPoolCount = 0,
+}) {
   const dialogRef = useRef(null);
   const open = useCallback(() => dialogRef.current?.showModal(), []);
   const close = useCallback(() => dialogRef.current?.close(), []);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        title="Sign out"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-900 text-white shadow-[0_8px_30px_rgba(22,51,41,0.35)] transition hover:bg-emerald-800 active:scale-95"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="h-5 w-5"
+      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-3">
+        {typeof onOpenPendingPool === "function" ? (
+          <button
+            type="button"
+            onClick={onOpenPendingPool}
+            title="Pending pool"
+            className="relative flex h-14 w-14 items-center justify-center rounded-full border border-emerald-900/20 bg-[#f4eedf] text-emerald-900 shadow-[0_8px_30px_rgba(22,51,41,0.22)] transition hover:bg-[#ece3ce] active:scale-95"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="h-5 w-5"
+            >
+              <path d="M3.5 3A1.5 1.5 0 0 0 2 4.5v2A1.5 1.5 0 0 0 3.5 8h13A1.5 1.5 0 0 0 18 6.5v-2A1.5 1.5 0 0 0 16.5 3h-13ZM2 10.5A1.5 1.5 0 0 1 3.5 9h13a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 12.5v-2ZM3.5 15A1.5 1.5 0 0 0 2 16.5v0A1.5 1.5 0 0 0 3.5 18h13a1.5 1.5 0 0 0 1.5-1.5v0a1.5 1.5 0 0 0-1.5-1.5h-13Z" />
+            </svg>
+            <span className="absolute -right-1 -top-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-950">
+              {pendingPoolCount}
+            </span>
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={open}
+          title="Sign out"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-900 text-white shadow-[0_8px_30px_rgba(22,51,41,0.35)] transition hover:bg-emerald-800 active:scale-95"
         >
-          {logoutIcon}
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-5 w-5"
+          >
+            {logoutIcon}
+          </svg>
+        </button>
+      </div>
 
       <dialog
         ref={dialogRef}
