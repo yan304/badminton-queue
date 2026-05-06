@@ -6,6 +6,10 @@ export default function SessionWorkspace({
   setActiveSessionId,
   newSessionName,
   setNewSessionName,
+  newSessionDate,
+  setNewSessionDate,
+  newSessionTime,
+  setNewSessionTime,
   createSession,
   activeSession,
   activeSessionRegistrationLink,
@@ -14,6 +18,23 @@ export default function SessionWorkspace({
   canManageRegistrationLock,
 }) {
   const [copyState, setCopyState] = useState("idle");
+
+  const formatSessionDateTime = (session) => {
+    const date = String(session?.scheduledDate ?? "").trim();
+    const time = String(session?.scheduledTime ?? "").trim();
+
+    if (!date && !time) {
+      return "";
+    }
+
+    if (date && time) {
+      return `${date} ${time}`;
+    }
+
+    return date || time;
+  };
+
+  const activeSessionDateTime = formatSessionDateTime(activeSession);
 
   const copyRegistrationLink = async () => {
     if (!activeSessionRegistrationLink || !navigator?.clipboard) {
@@ -55,13 +76,18 @@ export default function SessionWorkspace({
               </option>
             ))}
           </select>
+          <p className="text-[11px] text-emerald-900/45">
+            {activeSessionDateTime
+              ? `Scheduled: ${activeSessionDateTime}`
+              : "No schedule set"}
+          </p>
         </div>
 
         <div className="flex flex-1 flex-col gap-1 lg:max-w-md">
           <label className="text-xs font-medium text-emerald-900/70">
             Create new session
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <input
               type="text"
               value={newSessionName}
@@ -74,13 +100,27 @@ export default function SessionWorkspace({
               placeholder="Example: Friday Night Ladder"
               className="w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
             />
-            <button
-              type="button"
-              onClick={createSession}
-              className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
-            >
-              New
-            </button>
+            <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+              <input
+                type="date"
+                value={newSessionDate}
+                onChange={(event) => setNewSessionDate(event.target.value)}
+                className="w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+              />
+              <input
+                type="time"
+                value={newSessionTime}
+                onChange={(event) => setNewSessionTime(event.target.value)}
+                className="w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+              />
+              <button
+                type="button"
+                onClick={createSession}
+                className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
+              >
+                New
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -88,6 +128,14 @@ export default function SessionWorkspace({
         Session "{activeSession?.name ?? "Main"}" has isolated queue, courts,
         pairing mode, and notes from your other sessions.
       </p>
+      {activeSession?.scheduledDate || activeSession?.scheduledTime ? (
+        <p className="mt-1 text-xs text-emerald-900/50">
+          Scheduled: {activeSession?.scheduledDate || "No date"}
+          {activeSession?.scheduledTime
+            ? ` at ${activeSession.scheduledTime}`
+            : ""}
+        </p>
+      ) : null}
       <p className="mt-1 text-xs text-emerald-900/45">
         Every new session starts with a fresh player/check-in set.
       </p>

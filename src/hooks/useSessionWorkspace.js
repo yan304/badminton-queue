@@ -21,6 +21,8 @@ export default function useSessionWorkspace(user) {
   const [sessions, setSessions] = useState([DEFAULT_SESSION_ENTRY]);
   const [activeSessionId, setActiveSessionId] = useState("main");
   const [newSessionName, setNewSessionName] = useState("");
+  const [newSessionDate, setNewSessionDate] = useState("");
+  const [newSessionTime, setNewSessionTime] = useState("");
 
   const sessionsStorageKey = user
     ? `${SESSION_LIST_KEY_PREFIX}-${user.id}`
@@ -83,6 +85,8 @@ export default function useSessionWorkspace(user) {
               id: mainId,
               name: mainName,
               code,
+              scheduledDate: "",
+              scheduledTime: "",
               remoteSnapshotId: mainId,
             },
           ];
@@ -234,6 +238,8 @@ export default function useSessionWorkspace(user) {
         error,
         snapshotId,
         name: resolvedName,
+        scheduledDate,
+        scheduledTime,
       } = await fetchRemoteSnapshotByCode(sessionCode);
 
       if (cancelled || error || !snapshotId) {
@@ -255,6 +261,8 @@ export default function useSessionWorkspace(user) {
             id: joinedId,
             name: joinedName,
             code: sessionCode,
+            scheduledDate: String(scheduledDate ?? ""),
+            scheduledTime: String(scheduledTime ?? ""),
             remoteSnapshotId: snapshotId,
           },
         ];
@@ -275,6 +283,8 @@ export default function useSessionWorkspace(user) {
   const createSession = useCallback(() => {
     const trimmedName = newSessionName.trim();
     const name = trimmedName || `Session ${sessions.length + 1}`;
+    const scheduledDate = String(newSessionDate ?? "").trim();
+    const scheduledTime = String(newSessionTime ?? "").trim();
     const id = user ? getSessionSnapshotId(user.id, name) : name;
     const existingCodes = new Set(
       sessions.map((session) => String(session.code || "").toUpperCase()),
@@ -286,6 +296,10 @@ export default function useSessionWorkspace(user) {
         ? `${STORAGE_KEY}-${user.id}-${id}`
         : `${STORAGE_KEY}-${id}`;
       const freshState = createFreshSessionState();
+      freshState.sessionSchedule = {
+        date: scheduledDate,
+        time: scheduledTime,
+      };
       window.localStorage.setItem(
         sessionStorageKey,
         JSON.stringify(freshState),
@@ -313,13 +327,17 @@ export default function useSessionWorkspace(user) {
         id,
         name,
         code,
+        scheduledDate,
+        scheduledTime,
         remoteSnapshotId: id,
       },
     ];
     setSessions(nextSessions);
     setActiveSessionId(id);
     setNewSessionName("");
-  }, [newSessionName, sessions, user]);
+    setNewSessionDate("");
+    setNewSessionTime("");
+  }, [newSessionDate, newSessionName, newSessionTime, sessions, user]);
 
   return {
     sessions,
@@ -327,6 +345,10 @@ export default function useSessionWorkspace(user) {
     setActiveSessionId,
     newSessionName,
     setNewSessionName,
+    newSessionDate,
+    setNewSessionDate,
+    newSessionTime,
+    setNewSessionTime,
     activeSession,
     activeSessionRegistrationLink,
     createSession,

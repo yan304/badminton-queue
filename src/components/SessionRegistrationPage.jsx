@@ -114,6 +114,32 @@ export default function SessionRegistrationPage({ sessionCode }) {
   );
 
   const registrationsLocked = Boolean(appState.registrationsLocked);
+  const sessionDate = String(appState.sessionSchedule?.date ?? "").trim();
+  const sessionTime = String(appState.sessionSchedule?.time ?? "").trim();
+  const sessionTimeLabel = sessionTime
+    ? (() => {
+        const parts = sessionTime.split(":");
+        const hours = Number(parts[0]);
+        const minutes = Number(parts[1]);
+
+        if (
+          parts.length < 2 ||
+          !Number.isFinite(hours) ||
+          !Number.isFinite(minutes)
+        ) {
+          return sessionTime;
+        }
+
+        const normalizedHour = ((hours % 24) + 24) % 24;
+        const period = normalizedHour >= 12 ? "PM" : "AM";
+        const twelveHour = normalizedHour % 12 || 12;
+        return `${twelveHour}:${String(minutes).padStart(2, "0")} ${period}`;
+      })()
+    : "";
+  const sessionScheduleLabel =
+    sessionDate && sessionTimeLabel
+      ? `${sessionDate} at ${sessionTimeLabel}`
+      : sessionDate || sessionTimeLabel || "";
 
   const handleRegister = async (event) => {
     event.preventDefault();
@@ -193,16 +219,28 @@ export default function SessionRegistrationPage({ sessionCode }) {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <div className="w-full max-w-3xl space-y-4">
-        <section className="rounded-[1.8rem] border border-emerald-900/12 bg-white/80 p-6 shadow-[0_20px_60px_rgba(22,51,41,0.08)] backdrop-blur sm:p-8">
-          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.24em] text-emerald-800/65">
-            Session Registration
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-emerald-950">
-            {sessionName || `Session ${normalizedCode}`}
-          </h1>
-          <p className="mt-1 text-sm text-emerald-900/65">
-            Code: {normalizedCode}
-          </p>
+        <section className="relative rounded-[1.8rem] border border-emerald-900/12 bg-white/80 p-6 shadow-[0_20px_60px_rgba(22,51,41,0.08)] backdrop-blur sm:p-8">
+          <div className="pr-0 sm:pr-72">
+            <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-[0.24em] text-emerald-800/65">
+              Session Registration
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-emerald-950">
+              {sessionName || `Session ${normalizedCode}`}
+            </h1>
+            <p className="mt-1 text-sm text-emerald-900/65">
+              Code: {normalizedCode}
+            </p>
+          </div>
+          {sessionScheduleLabel ? (
+            <div className="mt-3 rounded-xl border border-emerald-900/20 bg-emerald-50/80 px-3 py-2 sm:absolute sm:right-8 sm:top-8 sm:mt-0 sm:w-72">
+              <p className="font-['IBM_Plex_Mono'] text-[10px] uppercase tracking-[0.16em] text-emerald-900/60">
+                Session Time
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-emerald-950">
+                Scheduled: {sessionScheduleLabel}
+              </p>
+            </div>
+          ) : null}
 
           {loading ? (
             <p className="mt-4 text-sm text-emerald-900/65">

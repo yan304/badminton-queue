@@ -79,6 +79,8 @@ export async function fetchRemoteSnapshotByCode(code) {
     snapshotId: row?.id ?? null,
     name: row?.name ?? null,
     code: row?.code ?? null,
+    scheduledDate: String(row?.payload?.sessionSchedule?.date ?? ""),
+    scheduledTime: String(row?.payload?.sessionSchedule?.time ?? ""),
     error: null,
   };
 }
@@ -91,7 +93,7 @@ export async function fetchRemoteSessionsByUser(userId) {
   const idPrefix = `user-${userId}-sessions-`;
   const { data, error } = await supabase
     .from(snapshotTable)
-    .select("id, name, code, updated_at")
+    .select("id, name, code, updated_at, payload")
     .like("id", `${idPrefix}%`)
     .order("updated_at", { ascending: false });
 
@@ -110,6 +112,8 @@ export async function fetchRemoteSessionsByUser(userId) {
         id: String(row.id ?? ""),
         name: String(row.name ?? fallbackName ?? "Session"),
         code: String(row.code ?? "").toUpperCase(),
+        scheduledDate: String(row.payload?.sessionSchedule?.date ?? ""),
+        scheduledTime: String(row.payload?.sessionSchedule?.time ?? ""),
         remoteSnapshotId: String(row.id ?? ""),
       };
     })

@@ -5,6 +5,8 @@ export const DEFAULT_SESSION_ENTRY = {
   id: "main",
   name: "Main",
   code: "",
+  scheduledDate: "",
+  scheduledTime: "",
   remoteSnapshotId: null,
 };
 
@@ -61,6 +63,8 @@ export function normalizeSessionEntry(session) {
     id: String(session?.id ?? ""),
     name: String(session?.name ?? "Untitled"),
     code: String(session?.code ?? "").toUpperCase(),
+    scheduledDate: String(session?.scheduledDate ?? ""),
+    scheduledTime: String(session?.scheduledTime ?? ""),
     remoteSnapshotId:
       typeof session?.remoteSnapshotId === "string"
         ? session.remoteSnapshotId

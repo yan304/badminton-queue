@@ -79,6 +79,7 @@ export function createDefaultState() {
 export function createFreshSessionState() {
   return {
     updatedAt: new Date().toISOString(),
+    sessionSchedule: { date: "", time: "" },
     players: [],
     registrationsLocked: false,
     queue: [],
@@ -344,6 +345,10 @@ export function normalizeState(rawState) {
       typeof baseState.updatedAt === "string"
         ? baseState.updatedAt
         : new Date().toISOString(),
+    sessionSchedule: {
+      date: String(baseState.sessionSchedule?.date ?? ""),
+      time: String(baseState.sessionSchedule?.time ?? ""),
+    },
     players: playersWithStats,
     registrationsLocked: Boolean(baseState.registrationsLocked),
     queue,

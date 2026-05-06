@@ -54,6 +54,10 @@ function DashboardScreen() {
     setActiveSessionId,
     newSessionName,
     setNewSessionName,
+    newSessionDate,
+    setNewSessionDate,
+    newSessionTime,
+    setNewSessionTime,
     activeSession,
     activeSessionRegistrationLink,
     createSession,
@@ -159,6 +163,10 @@ function DashboardScreen() {
           setActiveSessionId={setActiveSessionId}
           newSessionName={newSessionName}
           setNewSessionName={setNewSessionName}
+          newSessionDate={newSessionDate}
+          setNewSessionDate={setNewSessionDate}
+          newSessionTime={newSessionTime}
+          setNewSessionTime={setNewSessionTime}
           createSession={createSession}
           activeSession={activeSession}
           activeSessionRegistrationLink={activeSessionRegistrationLink}
