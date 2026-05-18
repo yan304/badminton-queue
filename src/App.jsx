@@ -62,6 +62,7 @@ function DashboardScreen() {
     activeSessionRegistrationLink,
     createSession,
     renameActiveSession,
+    deleteActiveSession,
   } = useSessionWorkspace(auth.user);
 
   const {
@@ -170,6 +171,7 @@ function DashboardScreen() {
           setNewSessionTime={setNewSessionTime}
           createSession={createSession}
           renameActiveSession={renameActiveSession}
+          deleteActiveSession={deleteActiveSession}
           activeSession={activeSession}
           activeSessionRegistrationLink={activeSessionRegistrationLink}
           registrationsLocked={Boolean(appState.registrationsLocked)}

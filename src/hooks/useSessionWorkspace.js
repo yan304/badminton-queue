@@ -280,6 +280,24 @@ export default function useSessionWorkspace(user) {
     };
   }, [user, sessions]);
 
+  const deleteActiveSession = useCallback(() => {
+    if (sessions.length <= 1) return;
+
+    const remaining = sessions.filter(
+      (session) => session.id !== activeSessionId,
+    );
+
+    if (user && typeof window !== "undefined") {
+      const sessionStorageKey = user
+        ? `${STORAGE_KEY}-${user.id}-${activeSessionId}`
+        : `${STORAGE_KEY}-${activeSessionId}`;
+      window.localStorage.removeItem(sessionStorageKey);
+    }
+
+    setSessions(remaining);
+    setActiveSessionId(remaining[0].id);
+  }, [activeSessionId, sessions, user]);
+
   const renameActiveSession = useCallback(
     async (newName) => {
       const trimmedName = newName.trim();
@@ -385,5 +403,6 @@ export default function useSessionWorkspace(user) {
     activeSessionRegistrationLink,
     createSession,
     renameActiveSession,
+    deleteActiveSession,
   };
 }

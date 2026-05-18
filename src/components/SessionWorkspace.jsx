@@ -12,6 +12,7 @@ export default function SessionWorkspace({
   setNewSessionTime,
   createSession,
   renameActiveSession,
+  deleteActiveSession,
   activeSession,
   activeSessionRegistrationLink,
   registrationsLocked,
@@ -21,6 +22,7 @@ export default function SessionWorkspace({
   const [copyState, setCopyState] = useState("idle");
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const handleRenameStart = () => {
     setNameInput(activeSession?.name ?? "");
@@ -108,6 +110,29 @@ export default function SessionWorkspace({
                 Cancel
               </button>
             </div>
+          ) : confirmingDelete ? (
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-red-700">
+                Delete &ldquo;{activeSession?.name}&rdquo;?
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteActiveSession();
+                  setConfirmingDelete(false);
+                }}
+                className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm font-medium text-emerald-900 transition hover:bg-emerald-50"
+              >
+                Cancel
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <select
@@ -129,6 +154,27 @@ export default function SessionWorkspace({
               >
                 ✎
               </button>
+              {sessions.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  title="Delete session"
+                  className="rounded-xl border border-red-200 bg-white px-2.5 py-2 text-sm text-red-500 transition hover:bg-red-50"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
           <p className="text-[11px] text-emerald-900/45">
