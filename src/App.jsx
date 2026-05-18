@@ -61,6 +61,7 @@ function DashboardScreen() {
     activeSession,
     activeSessionRegistrationLink,
     createSession,
+    renameActiveSession,
   } = useSessionWorkspace(auth.user);
 
   const {
@@ -168,6 +169,7 @@ function DashboardScreen() {
           newSessionTime={newSessionTime}
           setNewSessionTime={setNewSessionTime}
           createSession={createSession}
+          renameActiveSession={renameActiveSession}
           activeSession={activeSession}
           activeSessionRegistrationLink={activeSessionRegistrationLink}
           registrationsLocked={Boolean(appState.registrationsLocked)}
@@ -235,6 +237,7 @@ function DashboardScreen() {
               playersById={playersById}
               suggestedMatch={suggestedMatch}
               totalMatchesPlayed={totalMatchesPlayed}
+              completedMatches={completedMatches}
               shuttleCount={appState.shuttleCount}
               shuttleCost={appState.shuttleCost}
               startSuggestedMatch={startSuggestedMatch}

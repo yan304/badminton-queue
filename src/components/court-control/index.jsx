@@ -7,6 +7,7 @@ export default function CourtControl({
   playersById,
   suggestedMatch,
   totalMatchesPlayed,
+  completedMatches,
   shuttleCount,
   shuttleCost,
   startSuggestedMatch,
@@ -55,6 +56,7 @@ export default function CourtControl({
       <CostSummary
         courts={courts}
         playersById={playersById}
+        completedMatches={completedMatches}
         shuttleCount={shuttleCount}
         shuttleCost={shuttleCost}
         updateShuttleCount={updateShuttleCount}

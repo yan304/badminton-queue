@@ -11,6 +11,7 @@ export default function SessionWorkspace({
   newSessionTime,
   setNewSessionTime,
   createSession,
+  renameActiveSession,
   activeSession,
   activeSessionRegistrationLink,
   registrationsLocked,
@@ -18,6 +19,20 @@ export default function SessionWorkspace({
   canManageRegistrationLock,
 }) {
   const [copyState, setCopyState] = useState("idle");
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+
+  const handleRenameStart = () => {
+    setNameInput(activeSession?.name ?? "");
+    setEditingName(true);
+  };
+
+  const handleRenameConfirm = () => {
+    if (nameInput.trim()) {
+      renameActiveSession(nameInput.trim());
+    }
+    setEditingName(false);
+  };
 
   const formatSessionDateTime = (session) => {
     const date = String(session?.scheduledDate ?? "").trim();
@@ -65,17 +80,57 @@ export default function SessionWorkspace({
           <label className="text-xs font-medium text-emerald-900/70">
             Active session
           </label>
-          <select
-            value={activeSessionId}
-            onChange={(event) => setActiveSessionId(event.target.value)}
-            className="min-w-52 rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm font-medium text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
-          >
-            {sessions.map((session) => (
-              <option key={session.id} value={session.id}>
-                {session.name}
-              </option>
-            ))}
-          </select>
+          {editingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(event) => setNameInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") handleRenameConfirm();
+                  if (event.key === "Escape") setEditingName(false);
+                }}
+                autoFocus
+                className="min-w-52 rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm font-medium text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+              />
+              <button
+                type="button"
+                onClick={handleRenameConfirm}
+                className="rounded-xl bg-emerald-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-800"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingName(false)}
+                className="rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm font-medium text-emerald-900 transition hover:bg-emerald-50"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <select
+                value={activeSessionId}
+                onChange={(event) => setActiveSessionId(event.target.value)}
+                className="min-w-52 rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm font-medium text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+              >
+                {sessions.map((session) => (
+                  <option key={session.id} value={session.id}>
+                    {session.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleRenameStart}
+                title="Rename session"
+                className="rounded-xl border border-emerald-900/15 bg-white px-2.5 py-2 text-sm text-emerald-700 transition hover:bg-emerald-50"
+              >
+                ✎
+              </button>
+            </div>
+          )}
           <p className="text-[11px] text-emerald-900/45">
             {activeSessionDateTime
               ? `Scheduled: ${activeSessionDateTime}`

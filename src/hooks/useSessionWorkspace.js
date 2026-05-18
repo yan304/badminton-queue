@@ -280,6 +280,38 @@ export default function useSessionWorkspace(user) {
     };
   }, [user, sessions]);
 
+  const renameActiveSession = useCallback(
+    async (newName) => {
+      const trimmedName = newName.trim();
+      if (!trimmedName) return;
+
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === activeSessionId
+            ? { ...session, name: trimmedName }
+            : session,
+        ),
+      );
+
+      if (user && isSupabaseConfigured) {
+        const target = sessions.find((s) => s.id === activeSessionId);
+        if (target?.remoteSnapshotId) {
+          const { snapshot } = await fetchRemoteSnapshot(
+            target.remoteSnapshotId,
+          );
+          if (snapshot) {
+            await saveRemoteSnapshot(
+              target.remoteSnapshotId,
+              { ...snapshot, updatedAt: new Date().toISOString() },
+              { name: trimmedName, code: target.code },
+            );
+          }
+        }
+      }
+    },
+    [activeSessionId, sessions, user],
+  );
+
   const createSession = useCallback(() => {
     const trimmedName = newSessionName.trim();
     const name = trimmedName || `Session ${sessions.length + 1}`;
@@ -352,5 +384,6 @@ export default function useSessionWorkspace(user) {
     activeSession,
     activeSessionRegistrationLink,
     createSession,
+    renameActiveSession,
   };
 }
