@@ -330,6 +330,39 @@ export default function useSessionWorkspace(user) {
     [activeSessionId, sessions, user],
   );
 
+  const rescheduleActiveSession = useCallback(
+    async (scheduledDate, scheduledTime) => {
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === activeSessionId
+            ? { ...session, scheduledDate, scheduledTime }
+            : session,
+        ),
+      );
+
+      if (user && isSupabaseConfigured) {
+        const target = sessions.find((s) => s.id === activeSessionId);
+        if (target?.remoteSnapshotId) {
+          const { snapshot } = await fetchRemoteSnapshot(
+            target.remoteSnapshotId,
+          );
+          if (snapshot) {
+            await saveRemoteSnapshot(
+              target.remoteSnapshotId,
+              {
+                ...snapshot,
+                sessionSchedule: { date: scheduledDate, time: scheduledTime },
+                updatedAt: new Date().toISOString(),
+              },
+              { name: target.name, code: target.code },
+            );
+          }
+        }
+      }
+    },
+    [activeSessionId, sessions, user],
+  );
+
   const createSession = useCallback(() => {
     const trimmedName = newSessionName.trim();
     const name = trimmedName || `Session ${sessions.length + 1}`;
@@ -403,6 +436,7 @@ export default function useSessionWorkspace(user) {
     activeSessionRegistrationLink,
     createSession,
     renameActiveSession,
+    rescheduleActiveSession,
     deleteActiveSession,
   };
 }

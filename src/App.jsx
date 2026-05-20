@@ -62,6 +62,7 @@ function DashboardScreen() {
     activeSessionRegistrationLink,
     createSession,
     renameActiveSession,
+    rescheduleActiveSession,
     deleteActiveSession,
   } = useSessionWorkspace(auth.user);
 
@@ -171,6 +172,7 @@ function DashboardScreen() {
           setNewSessionTime={setNewSessionTime}
           createSession={createSession}
           renameActiveSession={renameActiveSession}
+          rescheduleActiveSession={rescheduleActiveSession}
           deleteActiveSession={deleteActiveSession}
           activeSession={activeSession}
           activeSessionRegistrationLink={activeSessionRegistrationLink}

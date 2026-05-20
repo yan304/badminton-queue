@@ -12,6 +12,7 @@ export default function SessionWorkspace({
   setNewSessionTime,
   createSession,
   renameActiveSession,
+  rescheduleActiveSession,
   deleteActiveSession,
   activeSession,
   activeSessionRegistrationLink,
@@ -23,6 +24,24 @@ export default function SessionWorkspace({
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(false);
+  const [scheduleInput, setScheduleInput] = useState({ date: "", time: "" });
+
+  const handleScheduleEditStart = () => {
+    setScheduleInput({
+      date: activeSession?.scheduledDate ?? "",
+      time: activeSession?.scheduledTime ?? "",
+    });
+    setEditingSchedule(true);
+  };
+
+  const handleScheduleConfirm = () => {
+    rescheduleActiveSession(
+      scheduleInput.date.trim(),
+      scheduleInput.time.trim(),
+    );
+    setEditingSchedule(false);
+  };
 
   const handleRenameStart = () => {
     setNameInput(activeSession?.name ?? "");
@@ -177,11 +196,62 @@ export default function SessionWorkspace({
               )}
             </div>
           )}
-          <p className="text-[11px] text-emerald-900/45">
-            {activeSessionDateTime
-              ? `Scheduled: ${activeSessionDateTime}`
-              : "No schedule set"}
-          </p>
+          {editingSchedule ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="date"
+                value={scheduleInput.date}
+                onChange={(event) =>
+                  setScheduleInput((prev) => ({
+                    ...prev,
+                    date: event.target.value,
+                  }))
+                }
+                className="rounded-xl border border-emerald-900/15 bg-white px-3 py-1.5 text-xs text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+              />
+              <input
+                type="time"
+                value={scheduleInput.time}
+                onChange={(event) =>
+                  setScheduleInput((prev) => ({
+                    ...prev,
+                    time: event.target.value,
+                  }))
+                }
+                className="rounded-xl border border-emerald-900/15 bg-white px-3 py-1.5 text-xs text-emerald-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/15"
+              />
+              <button
+                type="button"
+                onClick={handleScheduleConfirm}
+                className="rounded-xl bg-emerald-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-800"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingSchedule(false)}
+                className="rounded-xl border border-emerald-900/15 bg-white px-3 py-1.5 text-xs font-medium text-emerald-900 transition hover:bg-emerald-50"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <p className="text-[11px] text-emerald-900/45">
+                {activeSessionDateTime
+                  ? `Scheduled: ${activeSessionDateTime}`
+                  : "No schedule set"}
+              </p>
+              <button
+                type="button"
+                onClick={handleScheduleEditStart}
+                title="Edit schedule"
+                className="text-[11px] text-emerald-700/60 transition hover:text-emerald-700"
+              >
+                ✎
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col gap-1 lg:max-w-md">
@@ -229,14 +299,6 @@ export default function SessionWorkspace({
         Session "{activeSession?.name ?? "Main"}" has isolated queue, courts,
         pairing mode, and notes from your other sessions.
       </p>
-      {activeSession?.scheduledDate || activeSession?.scheduledTime ? (
-        <p className="mt-1 text-xs text-emerald-900/50">
-          Scheduled: {activeSession?.scheduledDate || "No date"}
-          {activeSession?.scheduledTime
-            ? ` at ${activeSession.scheduledTime}`
-            : ""}
-        </p>
-      ) : null}
       <p className="mt-1 text-xs text-emerald-900/45">
         Every new session starts with a fresh player/check-in set.
       </p>
